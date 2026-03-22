@@ -6,17 +6,13 @@ import LayoutShell from "@/components/LayoutShell";
 
 export const metadata: Metadata = {
   title: {
-    default: "미라클온",
-    template: "%s | 미라클온",
+    default: "제로브이",
+    template: "%s | 제로브이",
   },
-  description: "미라클온 재능기부단체로서 당신에게 기적이 되어주겠습니다.",
+  description: " 재능기부단체로서 당신에게 기적이 되어주겠습니다.",
   keywords: [
-    "미라클온",
-    "봉사단체",
-    "AI수업",
-    "코딩수업",
-    "플로깅봉사",
-    "선물"
+    "",
+    
   ],
   icons: {
     icon: "/icon.ico",
@@ -24,8 +20,8 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
   openGraph: {
-    title: "미라클온",
-    description: "사업자·법인, 세무, 자산, 상속·증여 컨설팅",
+    title: "제로브이",
+    description: "",
     type: "website",
     locale: "ko_KR",
   },

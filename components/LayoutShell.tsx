@@ -9,6 +9,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   const isUnbox = pathname?.startsWith("/unbox");
   const isApply = pathname?.startsWith("/apply");
   const isAdmin = pathname?.startsWith("/admin");
+  const isMobile = pathname?.startsWith("/mobile");
 
   // ✅ /unbox는 상위 헤더/패딩 없이 "그대로" 렌더
   if (isUnbox) {
@@ -20,6 +21,9 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   }
 
   if (isAdmin) {
+    return <>{children}</>;
+  }
+  if (isMobile) {
     return <>{children}</>;
   }
 

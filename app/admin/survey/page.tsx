@@ -13,6 +13,7 @@ import type {
   SurveyQuestionType,
 } from "@/types/survey";
 import { useEffect, useMemo, useState } from "react";
+import crypto from "crypto";
 
 type MultipleChoiceQuestion = {
   id: string | number;

@@ -532,17 +532,51 @@ const MobileDetailPage = () => {
 
     return makePdfFileName(dong, name);
   };
+  const isAndroidAppWebView = () => {
+  if (typeof window === "undefined") return false;
+  return !!(window as any).AndroidBlobDownloader;
+};
 
-  const downloadBlobFile = (blob: Blob, fileName: string) => {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  };
+const blobToBase64 = (blob: Blob) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("base64 변환 실패"));
+    };
+    reader.onerror = () => reject(new Error("파일 읽기 실패"));
+    reader.readAsDataURL(blob);
+  });
+  const downloadBlobFile = async (blob: Blob, fileName: string) => {
+  // 1) 앱 내 안드로이드 WebView면 네이티브 브리지 사용
+  if (isAndroidAppWebView()) {
+    try {
+      const base64 = await blobToBase64(blob);
+      const mimeType = blob.type || "application/octet-stream";
+
+      (window as any).AndroidBlobDownloader.saveBase64File(
+        base64,
+        mimeType,
+        fileName
+      );
+      return;
+    } catch (err) {
+      console.error(err);
+      alert("앱 내 다운로드 처리에 실패했습니다.");
+      return;
+    }
+  }
+
+  // 2) 일반 모바일웹/브라우저는 기존 방식 유지
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
 
   useEffect(() => {
     if (!item?.id) return;
@@ -642,7 +676,7 @@ const MobileDetailPage = () => {
         item?.name
       );
 
-      downloadBlobFile(blob, fileName);
+      await downloadBlobFile(blob, fileName);
 
       const latest = await fetchLatestWorkReport(item.id);
       if (latest) {
@@ -691,7 +725,7 @@ const MobileDetailPage = () => {
         item?.name
       );
 
-      downloadBlobFile(blob, fileName);
+      await downloadBlobFile(blob, fileName);
     } catch (err) {
       alert(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
     } finally {

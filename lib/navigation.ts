@@ -1,32 +1,72 @@
+declare global {
+  interface Window {
+    Android?: {
+      openKakaoNavi?: (name: string, address: string) => void;
+    };
+  }
+}
+
 export const openKakaoNavi = (name: string, address: string) => {
+  if (typeof window === "undefined") return;
+
   const encodedAddr = encodeURIComponent(address);
   const encodedName = encodeURIComponent(name);
 
-  // 1. 안드로이드용 Intent 스킴
-  // - package: 카카오내비 패키지명
-  // - S.browser_fallback_url: 앱이 없을 때 이동할 웹 주소 (카카오맵 검색 결과)
-  const androidIntent = `intent://search?q=${encodedAddr}#Intent;scheme=kakaonavi;package=com.locnall.KimGiSa;S.browser_fallback_url=${encodeURIComponent('https://map.kakao.com/link/search/' + address)};end`;
-
-  // 2. iOS 및 기타 환경용 커스텀 스킴
-  const iosScheme = `kakaonavi://search?q=${encodedAddr}`;
   const webFallback = `https://map.kakao.com/link/search/${encodedAddr}`;
 
-  const userAgent = navigator.userAgent.toLowerCase();
+  // 안드로이드용 intent 스킴
+  const androidIntent =
+    `intent://search?q=${encodedAddr}` +
+    `#Intent;scheme=kakaonavi;package=com.locnall.KimGiSa;` +
+    `S.browser_fallback_url=${encodeURIComponent(webFallback)};end`;
 
-  if (userAgent.includes("android")) {
-    // 안드로이드라면 Intent 스킴 사용 (가장 확실함)
-    window.location.href = androidIntent;
-  } else if (userAgent.includes("iphone") || userAgent.includes("ipad")) {
-    // iOS 처리 (기존 방식 유지하되 타임아웃 최소화)
-    const start = Date.now();
-    setTimeout(() => {
-      if (Date.now() - start < 1500) {
-        window.location.href = webFallback;
-      }
-    }, 1000);
-    window.location.href = iosScheme;
-  } else {
-    // PC 등 기타 환경
-    window.open(webFallback, '_blank');
+  // iOS용 커스텀 스킴
+  const iosScheme = `kakaonavi://search?q=${encodedAddr}`;
+
+  const ua = navigator.userAgent.toLowerCase();
+  const isAndroid = /android/.test(ua);
+  const isIOS = /iphone|ipad|ipod/.test(ua);
+
+  try {
+    // 1) 안드로이드 앱 WebView 안이라면 네이티브 브리지 우선
+    if (isAndroid && window.Android?.openKakaoNavi) {
+      window.Android.openKakaoNavi(name, address);
+      return;
+    }
+
+    // 2) 일반 안드로이드 브라우저 또는 브리지 없는 경우
+    if (isAndroid) {
+      const clickedAt = Date.now();
+
+      setTimeout(() => {
+        // 앱 전환이 안 일어났다면 fallback
+        if (Date.now() - clickedAt < 1800) {
+          window.location.href = webFallback;
+        }
+      }, 1200);
+
+      window.location.href = androidIntent;
+      return;
+    }
+
+    // 3) iPhone / iPad
+    if (isIOS) {
+      const clickedAt = Date.now();
+
+      setTimeout(() => {
+        if (Date.now() - clickedAt < 1800) {
+          window.location.href = webFallback;
+        }
+      }, 1200);
+
+      window.location.href = iosScheme;
+      return;
+    }
+
+    // 4) PC 및 기타 환경
+    window.open(webFallback, "_blank", "noopener,noreferrer");
+  } catch (error) {
+    console.error("카카오내비 실행 실패:", error);
+    window.open(webFallback, "_blank", "noopener,noreferrer");
   }
 };

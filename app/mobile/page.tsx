@@ -300,7 +300,7 @@ const MobileDashboardPage = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          openKakaoNavi(item.name, item.roadAddress);
+                          openKakaoNavi(item.roadAddress,item.latitude??0,item.longitude??0);
                         }}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-[#191919] active:opacity-80"
                       >

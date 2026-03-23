@@ -13,6 +13,8 @@ export type CleanUpHouseholdItem = {
   roadAddress: string;
   detailAddress: string | null;
   isArchived?:boolean | false;
+  latitude?:number|0;
+  longitude?:number|0;
 };
 
 export type CleanUpHouseholdListParams = {

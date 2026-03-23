@@ -1,6 +1,6 @@
 export type CleanUpHouseholdGroup = "senior" | "vulnerable" | "";
 
-export type CleanUpHouseholdSortField = "localNo" | "dong";
+export type CleanUpHouseholdSortField = "localNo" | "dong" | "routerOrder";
 export type SortOrder = "asc" | "desc";
 
 export type CleanUpHouseholdItem = {

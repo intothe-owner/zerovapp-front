@@ -12,7 +12,15 @@ import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import SwipeableItem from "./SwipeableItem";
 import { useQueryClient } from "@tanstack/react-query";
-import { List, Archive, RotateCcw } from "lucide-react"; // 아이콘 추가
+import {
+  List,
+  Archive,
+  RotateCcw,
+  ChevronUp,   // 추가
+  ChevronDown  // 추가
+} from "lucide-react";
+import { openKakaoNavi } from "@/lib/navigation";
+import axios from "axios";
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
 type TabType = "LIST" | "ARCHIVE";
 const MobileDashboardPage = () => {
@@ -34,9 +42,9 @@ const MobileDashboardPage = () => {
   // 보관/복구 핸들러 (탭에 따라 동작 다르게)
   const handleToggleArchive = async (id: number, name: string, isArchiving: boolean) => {
     await archiveMutation.mutateAsync(id);
-      
+
   };
- 
+
 
   const queryParams = useMemo(
     () => ({
@@ -51,6 +59,7 @@ const MobileDashboardPage = () => {
     }),
     [page, pageSize, q, group, sort, order, activeTab]
   );
+  
 
   const { data, isLoading, isError, error } = useCleanUpHouseholdList(queryParams);
 
@@ -83,7 +92,28 @@ const MobileDashboardPage = () => {
 
   const items = data?.items ?? [];
   const pagination = data?.pagination;
+  // 순서 변경 함수 (현재는 로컬 배열에서만 변경, 실제 DB 연동은 아래 별도 설명)
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
 
+    const dragId = items[index].id;
+    const dropId = items[targetIndex].id;
+    console.log(process.env.NEXT_PUBLIC_API_BASE_URL);
+
+    try {
+      // 순서 변경 API 호출
+      await axios.patch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/households/reorder`, {
+        dragId,
+        dropId
+      });
+
+      // 리스트 새로고침
+      queryClient.invalidateQueries({ queryKey: ["clean-up-households"] });
+    } catch (error) {
+      alert("순서 변경에 실패했습니다.");
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
@@ -201,41 +231,85 @@ const MobileDashboardPage = () => {
               조회된 데이터가 없습니다.
             </div>
           ) : (
-            items.map((item) => (
+            items.map((item, index) => (
               <SwipeableItem
                 key={item.id}
+                isArchive={activeTab === "ARCHIVE"}
                 onArchive={() => handleToggleArchive(item.id, item.name, activeTab === "LIST")}
-                isArchive={item.isArchived}
               >
-                <Link
-                  href={`/mobile/views/${item.id}`}
-                  className="block p-4 transition active:bg-gray-50"
-                >
-                  <div className="flex items-start justify-between gap-3">
+                <div className="relative block p-4 transition active:bg-gray-50">
+                  <Link href={`/mobile/views/${item.id}`} className="block">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs text-gray-400">연번 {item.no ?? "-"}</p>
-                        <h3 className="mt-0.5 text-lg font-bold text-blue-600">{item.name}</h3>
+                        <p className="text-[11px] font-medium text-gray-400">연번 {item.no ?? "-"}</p>
+                        <h3 className="mt-0.5 text-lg font-extrabold text-blue-600">{item.name}</h3>
                       </div>
-                      {/* 보관함인 경우 아이콘 표시 */}
                       {activeTab === "ARCHIVE" && <Archive size={14} className="text-gray-400" />}
                     </div>
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">
-                      {item.dong || "-"}
-                    </span>
-                  </div>
 
-                  <div className="mt-3 grid grid-cols-1 gap-1 text-[13px]">
-                    <div className="flex gap-2">
-                      <span className="w-20 text-gray-400">휴대폰</span>
-                      <span className="text-gray-700">{item.phone || "-"}</span>
+                    {/* 정보 영역과 버튼 영역을 flex로 분리 */}
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      {/* 왼쪽: 주소 및 연락처 정보 */}
+                      <div className="flex-1 space-y-1 text-[13px]">
+                        <div className="flex items-center gap-3">
+                          <span className="w-16 font-semibold text-gray-400">휴대폰</span>
+                          <span className="font-medium text-gray-700">{item.phone || "-"}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-16 font-semibold text-gray-400">도로명주소</span>
+                          <span className="flex-1 truncate font-medium text-gray-700">
+                            {item.roadAddress || "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 오른쪽: 순서 조정 버튼 (보관함에서만 표시) */}
+                      {activeTab === "ARCHIVE" && (
+                        <div className="flex flex-col gap-1 border-l border-gray-100 pl-3">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleMove(index, 'up');
+                            }}
+                            disabled={index === 0}
+                            className="rounded-md bg-gray-50 p-1.5 active:bg-gray-200 disabled:opacity-20"
+                          >
+                            <ChevronUp size={20} className="text-gray-600" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleMove(index, 'down');
+                            }}
+                            disabled={index === items.length - 1}
+                            className="rounded-md bg-gray-50 p-1.5 active:bg-gray-200 disabled:opacity-20"
+                          >
+                            <ChevronDown size={20} className="text-gray-600" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex gap-2">
-                      <span className="w-20 text-gray-400">도로명주소</span>
-                      <span className="truncate text-gray-700">{item.roadAddress || "-"}</span>
+                  </Link>
+
+                  {/* 카카오내비 버튼 (보관함 전용) */}
+                  {activeTab === "ARCHIVE" && (
+                    <div className="mt-4 flex justify-end border-t border-gray-100 pt-3">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openKakaoNavi(item.name, item.roadAddress);
+                        }}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-[#191919] active:opacity-80"
+                      >
+                        <img src="/icons/kakaonavi.png" alt="" className="w-5 h-5" />
+                        카카오내비 길안내 시작
+                      </button>
                     </div>
-                  </div>
-                </Link>
+                  )}
+                </div>
               </SwipeableItem>
             ))
           )}
@@ -283,9 +357,8 @@ const MobileDashboardPage = () => {
         <div className="mx-auto flex h-16 max-w-md items-center justify-around">
           <button
             onClick={() => { setActiveTab("LIST"); setPage(1); }}
-            className={`flex flex-col items-center gap-1 transition ${
-              activeTab === "LIST" ? "text-blue-600" : "text-gray-400"
-            }`}
+            className={`flex flex-col items-center gap-1 transition ${activeTab === "LIST" ? "text-blue-600" : "text-gray-400"
+              }`}
           >
             <List size={20} />
             <span className="text-[10px] font-bold">청소목록</span>
@@ -293,9 +366,8 @@ const MobileDashboardPage = () => {
 
           <button
             onClick={() => { setActiveTab("ARCHIVE"); setPage(1); }}
-            className={`flex flex-col items-center gap-1 transition ${
-              activeTab === "ARCHIVE" ? "text-blue-600" : "text-gray-400"
-            }`}
+            className={`flex flex-col items-center gap-1 transition ${activeTab === "ARCHIVE" ? "text-blue-600" : "text-gray-400"
+              }`}
           >
             <Archive size={20} />
             <span className="text-[10px] font-bold">오늘 작업 동선</span>

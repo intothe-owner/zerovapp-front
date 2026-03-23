@@ -533,50 +533,50 @@ const MobileDetailPage = () => {
     return makePdfFileName(dong, name);
   };
   const isAndroidAppWebView = () => {
-  if (typeof window === "undefined") return false;
-  return !!(window as any).AndroidBlobDownloader;
-};
+    if (typeof window === "undefined") return false;
+    return !!(window as any).AndroidBlobDownloader;
+  };
 
-const blobToBase64 = (blob: Blob) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("base64 변환 실패"));
-    };
-    reader.onerror = () => reject(new Error("파일 읽기 실패"));
-    reader.readAsDataURL(blob);
-  });
+  const blobToBase64 = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") resolve(reader.result);
+        else reject(new Error("base64 변환 실패"));
+      };
+      reader.onerror = () => reject(new Error("파일 읽기 실패"));
+      reader.readAsDataURL(blob);
+    });
   const downloadBlobFile = async (blob: Blob, fileName: string) => {
-  // 1) 앱 내 안드로이드 WebView면 네이티브 브리지 사용
-  if (isAndroidAppWebView()) {
-    try {
-      const base64 = await blobToBase64(blob);
-      const mimeType = blob.type || "application/octet-stream";
+    // 1) 앱 내 안드로이드 WebView면 네이티브 브리지 사용
+    if (isAndroidAppWebView()) {
+      try {
+        const base64 = await blobToBase64(blob);
+        const mimeType = blob.type || "application/octet-stream";
 
-      (window as any).AndroidBlobDownloader.saveBase64File(
-        base64,
-        mimeType,
-        fileName
-      );
-      return;
-    } catch (err) {
-      console.error(err);
-      alert("앱 내 다운로드 처리에 실패했습니다.");
-      return;
+        (window as any).AndroidBlobDownloader.saveBase64File(
+          base64,
+          mimeType,
+          fileName
+        );
+        return;
+      } catch (err) {
+        console.error(err);
+        alert("앱 내 다운로드 처리에 실패했습니다.");
+        return;
+      }
     }
-  }
 
-  // 2) 일반 모바일웹/브라우저는 기존 방식 유지
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
-};
+    // 2) 일반 모바일웹/브라우저는 기존 방식 유지
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (!item?.id) return;
@@ -737,6 +737,7 @@ const blobToBase64 = (blob: Blob) =>
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="relative flex h-14 items-center justify-between px-4">
+          {/* 1. 뒤로가기 버튼 */}
           <button
             type="button"
             onClick={() => router.back()}
@@ -746,20 +747,26 @@ const blobToBase64 = (blob: Blob) =>
             <ChevronLeft className="h-6 w-6 text-gray-800" />
           </button>
 
+          {/* 2. 중앙 제목 (절대 위치로 고정) */}
           <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-bold text-gray-900">
             대상자 상세
           </h1>
-          <button 
-          onClick={openPdfModal}
-          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
-            PDF
-          </button>
-          <Link
-            href="/mobile"
-            className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
-          >
-            목록
-          </Link>
+
+          {/* 3. 오른쪽 버튼 그룹 (PDF + 목록) */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openPdfModal}
+              className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
+            >
+              PDF
+            </button>
+            <Link
+              href="/mobile"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
+            >
+              목록
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -796,7 +803,7 @@ const blobToBase64 = (blob: Blob) =>
             </div>
           </div>
 
-          
+
           {isLoading ? (
             <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
               상세 정보를 불러오는 중입니다.
@@ -852,16 +859,15 @@ const blobToBase64 = (blob: Blob) =>
               주소, 작업전, 작업중, 작업후 이미지를 각 1장씩 등록할 수 있습니다.
             </p>
 
-            
+
           </div>
 
           {message ? (
             <div
-              className={`mb-4 rounded-xl px-4 py-3 text-sm ${
-                message.includes("실패") || message.includes("먼저")
+              className={`mb-4 rounded-xl px-4 py-3 text-sm ${message.includes("실패") || message.includes("먼저")
                   ? "border border-red-200 bg-red-50 text-red-700"
                   : "border border-green-200 bg-green-50 text-green-700"
-              }`}
+                }`}
             >
               {message}
             </div>
@@ -914,13 +920,13 @@ const blobToBase64 = (blob: Blob) =>
                 );
               })}
               <button
-              type="button"
-              onClick={handleSavePhotos}
-              disabled={!item || uploadMutation.isPending}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-            >
-              {uploadMutation.isPending ? "저장 중..." : "이미지 저장"}
-            </button>
+                type="button"
+                onClick={handleSavePhotos}
+                disabled={!item || uploadMutation.isPending}
+                className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                {uploadMutation.isPending ? "저장 중..." : "이미지 저장"}
+              </button>
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
@@ -938,7 +944,7 @@ const blobToBase64 = (blob: Blob) =>
           </div>
 
           {activeSurveyQuery.isLoading ||
-          (item?.id ? surveyResponseQuery.isLoading : false) ? (
+            (item?.id ? surveyResponseQuery.isLoading : false) ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
               설문 정보를 불러오는 중입니다.
             </div>

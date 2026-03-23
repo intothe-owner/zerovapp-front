@@ -26,7 +26,7 @@ const AdminExcelUploadPage = () => {
     const selected = e.target.files?.[0] ?? null;
     if (!selected) return;
 
-    const lowerName = selected.name.toLowerCase();
+    const lowerName = selected.name.toLowerCase(); 
     if (!lowerName.endsWith(".xls") && !lowerName.endsWith(".xlsx")) {
       alert("엑셀 파일(.xls, .xlsx)만 업로드할 수 있습니다.");
       e.target.value = "";

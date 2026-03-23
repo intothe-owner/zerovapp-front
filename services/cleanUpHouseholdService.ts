@@ -3,6 +3,7 @@ import {
   CleanUpHouseholdListResponse,
   CleanUpHouseholdDetailResponse,
 } from "@/types/cleanUpHousehold";
+import axios from "axios";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -15,7 +16,10 @@ function buildQueryString(params: CleanUpHouseholdListParams) {
   if (params.group) searchParams.set("group", params.group);
   if (params.sort) searchParams.set("sort", params.sort);
   if (params.order) searchParams.set("order", params.order);
-
+  // 추가: 보관함 여부 전달
+  if (params.isArchived !== undefined) {
+    searchParams.set("isArchived", String(params.isArchived));
+  }
   return searchParams.toString();
 }
 
@@ -87,4 +91,11 @@ export async function uploadCleanUpHouseholdPhotos(
   }
 
   return data;
+}
+
+export async function archiveCleanUpHousehold(id: number) {
+  // 백엔드 주소에 맞춰 PATCH 요청 전송
+  
+  const response = await axios.patch(`${BACKEND_URL}/households/${id}/archive`);
+  return response.data;
 }

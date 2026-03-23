@@ -1,6 +1,6 @@
 "use client";
 
-import { useCleanUpHouseholdList } from "@/hooks/useCleanUpHousehold";
+import { useArchiveCleanUpHousehold, useCleanUpHouseholdList } from "@/hooks/useCleanUpHousehold";
 import Link from "next/link";
 import {
   CleanUpHouseholdGroup,
@@ -8,12 +8,15 @@ import {
   SortOrder,
 } from "@/types/cleanUpHousehold";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+
 import { useRouter } from "next/navigation";
-
+import SwipeableItem from "./SwipeableItem";
+import { useQueryClient } from "@tanstack/react-query";
+import { List, Archive, RotateCcw } from "lucide-react"; // 아이콘 추가
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
-
+type TabType = "LIST" | "ARCHIVE";
 const MobileDashboardPage = () => {
+  const [activeTab, setActiveTab] = useState<TabType>("LIST"); // 탭 상태 추가
   const router = useRouter();
 
   const [page, setPage] = useState(1);
@@ -26,6 +29,15 @@ const MobileDashboardPage = () => {
   const [sort, setSort] = useState<CleanUpHouseholdSortField>("localNo");
   const [order, setOrder] = useState<SortOrder>("asc");
 
+  const queryClient = useQueryClient(); // 3. 인스턴스 생성 (오류 해결 포인트!)
+  const archiveMutation = useArchiveCleanUpHousehold(); // 4. 보관 뮤테이션 사용
+  // 보관/복구 핸들러 (탭에 따라 동작 다르게)
+  const handleToggleArchive = async (id: number, name: string, isArchiving: boolean) => {
+    await archiveMutation.mutateAsync(id);
+      
+  };
+ 
+
   const queryParams = useMemo(
     () => ({
       page,
@@ -34,12 +46,14 @@ const MobileDashboardPage = () => {
       group,
       sort,
       order,
+      // 탭에 따라 백엔드에 보관 여부 전달
+      isArchived: activeTab === "ARCHIVE",
     }),
-    [page, pageSize, q, group, sort, order]
+    [page, pageSize, q, group, sort, order, activeTab]
   );
 
-  const { data, isLoading, isError, error, isFetching } =
-    useCleanUpHouseholdList(queryParams);
+  const { data, isLoading, isError, error } = useCleanUpHouseholdList(queryParams);
+
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -74,13 +88,13 @@ const MobileDashboardPage = () => {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="relative flex h-14 items-center justify-between px-4">
-          
+
 
           <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-bold text-gray-900">
             대상자 목록
           </h1>
 
-          
+
         </div>
       </header>
 
@@ -98,20 +112,20 @@ const MobileDashboardPage = () => {
             </p>
           </div>
 
-          
+
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
             <div>
-              <h2 className="text-lg font-bold">냉방기 클린UP 건강프로젝트<br/> 대상자 목록</h2>
+              <h2 className="text-lg font-bold">냉방기 클린UP 건강프로젝트<br /> 대상자 목록</h2>
               <p className="mt-1 text-sm text-gray-500">
                 성명, 휴대폰, 대리인 연락처, 도로명주소로 검색할 수 있습니다.
               </p>
             </div>
 
             <form onSubmit={handleSearchSubmit} className="space-y-3">
-              
+
 
               <div className="grid grid-cols-2 gap-2">
                 <select
@@ -188,59 +202,46 @@ const MobileDashboardPage = () => {
             </div>
           ) : (
             items.map((item) => (
-              <Link
+              <SwipeableItem
                 key={item.id}
-                href={`/mobile/views/${item.id}`}
-                className="block rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition active:scale-[0.99]"
+                onArchive={() => handleToggleArchive(item.id, item.name, activeTab === "LIST")}
+                isArchive={item.isArchived}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-gray-500">연번 {item.no ?? "-"}</p>
-                    <h3 className="mt-1 text-lg font-bold text-blue-600">
-                      {item.name ?? "-"}
-                    </h3>
-                  </div>
-
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-                    {item.dong || "-"}
-                  </span>
-                </div>
-
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex gap-2">
-                    <span className="w-20 shrink-0 text-gray-500">휴대폰</span>
-                    <span className="text-gray-900">{item.phone || "-"}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <span className="w-20 shrink-0 text-gray-500">
-                      대리인 연락처
-                    </span>
-                    <span className="text-gray-900">
-                      {item.proxyPhone || "-"}
+                <Link
+                  href={`/mobile/views/${item.id}`}
+                  className="block p-4 transition active:bg-gray-50"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-gray-400">연번 {item.no ?? "-"}</p>
+                        <h3 className="mt-0.5 text-lg font-bold text-blue-600">{item.name}</h3>
+                      </div>
+                      {/* 보관함인 경우 아이콘 표시 */}
+                      {activeTab === "ARCHIVE" && <Archive size={14} className="text-gray-400" />}
+                    </div>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-500">
+                      {item.dong || "-"}
                     </span>
                   </div>
 
-                  <div className="flex gap-2">
-                    <span className="w-20 shrink-0 text-gray-500">도로명주소</span>
-                    <span className="break-words text-gray-900">
-                      {item.roadAddress || "-"}
-                    </span>
+                  <div className="mt-3 grid grid-cols-1 gap-1 text-[13px]">
+                    <div className="flex gap-2">
+                      <span className="w-20 text-gray-400">휴대폰</span>
+                      <span className="text-gray-700">{item.phone || "-"}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="w-20 text-gray-400">도로명주소</span>
+                      <span className="truncate text-gray-700">{item.roadAddress || "-"}</span>
+                    </div>
                   </div>
-
-                  <div className="flex gap-2">
-                    <span className="w-20 shrink-0 text-gray-500">상세주소</span>
-                    <span className="break-words text-gray-900">
-                      {item.detailAddress || "-"}
-                    </span>
-                  </div>
-                </div>
-              </Link>
+                </Link>
+              </SwipeableItem>
             ))
           )}
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-20">
           <div className="space-y-3">
             <div className="text-center text-sm text-gray-500">
               총 <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>건
@@ -278,6 +279,29 @@ const MobileDashboardPage = () => {
           </div>
         </section>
       </main>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 pb-safe backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-md items-center justify-around">
+          <button
+            onClick={() => { setActiveTab("LIST"); setPage(1); }}
+            className={`flex flex-col items-center gap-1 transition ${
+              activeTab === "LIST" ? "text-blue-600" : "text-gray-400"
+            }`}
+          >
+            <List size={20} />
+            <span className="text-[10px] font-bold">청소목록</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab("ARCHIVE"); setPage(1); }}
+            className={`flex flex-col items-center gap-1 transition ${
+              activeTab === "ARCHIVE" ? "text-blue-600" : "text-gray-400"
+            }`}
+          >
+            <Archive size={20} />
+            <span className="text-[10px] font-bold">오늘 작업 동선</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 };

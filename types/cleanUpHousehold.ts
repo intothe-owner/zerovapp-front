@@ -12,6 +12,7 @@ export type CleanUpHouseholdItem = {
   proxyPhone: string | null;
   roadAddress: string;
   detailAddress: string | null;
+  isArchived?:boolean | false;
 };
 
 export type CleanUpHouseholdListParams = {
@@ -21,6 +22,7 @@ export type CleanUpHouseholdListParams = {
   group?: CleanUpHouseholdGroup;
   sort?: CleanUpHouseholdSortField;
   order?: SortOrder;
+  isArchived?: boolean; // 추가
 };
 
 export type CleanUpHouseholdListResponse = {

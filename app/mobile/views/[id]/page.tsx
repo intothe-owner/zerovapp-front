@@ -18,20 +18,7 @@ import {
 } from "react";
 import { ChevronLeft, FileText, Download, Home } from "lucide-react";
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "-";
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
 
 function maskRrn(rrn?: string | null) {
   if (!rrn) return "-";
@@ -39,11 +26,7 @@ function maskRrn(rrn?: string | null) {
   return `${rrn.slice(0, 6)}******`;
 }
 
-function labelListType(value?: string) {
-  if (value === "SELECTED") return "선정자";
-  if (value === "WAITLIST") return "대기자";
-  return value ?? "-";
-}
+
 
 function buildImageUrl(path?: string | null) {
   if (!path) return null;

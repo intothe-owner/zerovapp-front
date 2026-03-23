@@ -1,22 +1,10 @@
-// utils/navigation.ts (또는 page.tsx 내부에 작성)
-
 export const openKakaoNavi = (name: string, address: string) => {
-  // 카카오내비 길안내 URL 스킴
-  // destination 파라미터에 '장소명,위도,경도'를 넣는 것이 정확하지만, 
-  // 위경도가 없다면 주소만으로도 검색 결과 페이지를 띄울 수 있습니다.
-  
-  const encodedName = encodeURIComponent(name);
   const encodedAddr = encodeURIComponent(address);
   
-  // 목적지 명칭과 주소를 포함한 카카오내비 검색 및 길안내 연동
-  const naviUrl = `kakaonavi://search?q=${encodedAddr}`;
-  const webUrl = `https://map.kakao.com/link/search/${encodedAddr}`;
+  // Intent 스킴 사용 (안드로이드 전용)
+  // S.browser_fallback_url은 앱이 없을 때 이동할 주소입니다.
+  const intentUrl = `intent://search?q=${encodedAddr}#Intent;scheme=kakaonavi;package=com.locnall.KimGiSa;S.browser_fallback_url=${encodeURIComponent('https://map.kakao.com/link/search/' + address)};end`;
 
-  // 모바일 브라우저에서 실행 시도
-  const checkApp = setTimeout(() => {
-    // 앱이 설치되어 있지 않으면 카카오맵 웹페이지로 이동
-    window.location.href = webUrl;
-  }, 1000);
-
-  window.location.href = naviUrl;
+  // 단순 이동 (타임아웃 필요 없음)
+  window.location.href = intentUrl;
 };

@@ -749,7 +749,11 @@ const blobToBase64 = (blob: Blob) =>
           <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-bold text-gray-900">
             대상자 상세
           </h1>
-
+          <button 
+          onClick={openPdfModal}
+          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700">
+            PDF
+          </button>
           <Link
             href="/mobile"
             className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700"
@@ -760,7 +764,7 @@ const blobToBase64 = (blob: Blob) =>
       </header>
 
       <main className="mx-auto w-full max-w-md px-4 py-4 space-y-4">
-        <section className="grid grid-cols-2 gap-3">
+        {/* <section className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-xs text-gray-500">연번</p>
             <p className="mt-1 text-lg font-bold">{item?.localNo ?? "-"}</p>
@@ -780,7 +784,7 @@ const blobToBase64 = (blob: Blob) =>
             <p className="text-xs text-gray-500">총점</p>
             <p className="mt-1 text-lg font-bold">{item?.totalScore ?? "-"}</p>
           </div>
-        </section>
+        </section> */}
 
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
@@ -790,54 +794,9 @@ const blobToBase64 = (blob: Blob) =>
                 냉방기 클린UP 대상자 상세 정보입니다.
               </p>
             </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={openPdfModal}
-                disabled={!item}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-              >
-                <FileText className="h-4 w-4" />
-                PDF 파일 생성
-              </button>
-
-              {savedWorkReportId ? (
-                <button
-                  type="button"
-                  onClick={handleDownloadSavedPdf}
-                  disabled={pdfLoading}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-                >
-                  <Download className="h-4 w-4" />
-                  {pdfLoading ? "다운로드 중..." : "저장된 PDF 다운로드"}
-                </button>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700"
-              >
-                뒤로가기
-              </button>
-
-              <Link
-                href="/mobile"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white"
-              >
-                <Home className="h-4 w-4" />
-                목록으로
-              </Link>
-            </div>
           </div>
 
-          {savedPdfPath ? (
-            <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-              저장된 PDF가 있습니다. 필요 시 언제든 다시 다운로드할 수 있습니다.
-            </div>
-          ) : null}
-
+          
           {isLoading ? (
             <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
               상세 정보를 불러오는 중입니다.
@@ -854,7 +813,7 @@ const blobToBase64 = (blob: Blob) =>
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-gray-200 p-4">
+              {/* <div className="rounded-2xl border border-gray-200 p-4">
                 <h3 className="mb-3 text-base font-bold">기본 정보</h3>
                 <div className="space-y-2">
                   <DetailRow label="ID" value={item.id} />
@@ -869,7 +828,7 @@ const blobToBase64 = (blob: Blob) =>
                     value={formatDateTime(item.createdAt)}
                   />
                 </div>
-              </div>
+              </div> */}
 
               <div className="rounded-2xl border border-gray-200 p-4">
                 <h3 className="mb-3 text-base font-bold">개인/연락처 정보</h3>
@@ -893,14 +852,7 @@ const blobToBase64 = (blob: Blob) =>
               주소, 작업전, 작업중, 작업후 이미지를 각 1장씩 등록할 수 있습니다.
             </p>
 
-            <button
-              type="button"
-              onClick={handleSavePhotos}
-              disabled={!item || uploadMutation.isPending}
-              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-            >
-              {uploadMutation.isPending ? "저장 중..." : "이미지 저장"}
-            </button>
+            
           </div>
 
           {message ? (
@@ -961,6 +913,14 @@ const blobToBase64 = (blob: Blob) =>
                   </div>
                 );
               })}
+              <button
+              type="button"
+              onClick={handleSavePhotos}
+              disabled={!item || uploadMutation.isPending}
+              className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {uploadMutation.isPending ? "저장 중..." : "이미지 저장"}
+            </button>
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">

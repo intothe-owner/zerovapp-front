@@ -92,42 +92,26 @@ const MobileDashboardPage = () => {
           </div>
 
           <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-gray-500">현재 상태</p>
+            <p className="text-xs text-gray-500">보고서 완료건수</p>
             <p className="mt-1 text-xl font-bold">
-              {isLoading ? "로딩중" : isFetching ? "갱신중" : "정상"}
+              {/* {isLoading ? "로딩중" : isFetching ? "갱신중" : "정상"} */}
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-gray-500">현재 페이지</p>
-            <p className="mt-1 text-xl font-bold">{pagination?.page ?? 1}</p>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs text-gray-500">페이지 크기</p>
-            <p className="mt-1 text-xl font-bold">
-              {pagination?.pageSize ?? pageSize}
-            </p>
-          </div>
+          
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
             <div>
-              <h2 className="text-lg font-bold">냉방기 클린UP 대상자 목록</h2>
+              <h2 className="text-lg font-bold">냉방기 클린UP 건강프로젝트<br/> 대상자 목록</h2>
               <p className="mt-1 text-sm text-gray-500">
                 성명, 휴대폰, 대리인 연락처, 도로명주소로 검색할 수 있습니다.
               </p>
             </div>
 
             <form onSubmit={handleSearchSubmit} className="space-y-3">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="성명 / 휴대폰 / 대리인 / 주소 검색"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500"
-              />
+              
 
               <div className="grid grid-cols-2 gap-2">
                 <select
@@ -170,7 +154,13 @@ const MobileDashboardPage = () => {
                   ))}
                 </select>
               </div>
-
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="성명 / 휴대폰 / 대리인 / 주소 검색"
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500"
+              />
               <button
                 type="submit"
                 className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"

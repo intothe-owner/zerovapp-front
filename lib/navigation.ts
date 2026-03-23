@@ -11,9 +11,9 @@ export const openKakaoNavi = (name: string, x: number | string, y: number | stri
 
   const sx = String(x);
   const sy = String(y);
-
+  console.log(`${name},${sx},${sy}`);
   if (window.Android?.openKakaoNavi) {
-    window.Android.openKakaoNavi(name, sx.toString(), sy.toString());
+    window.Android.openKakaoNavi(name, sx, sy);
     return;
   }
 

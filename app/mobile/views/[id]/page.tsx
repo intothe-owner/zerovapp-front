@@ -862,16 +862,7 @@ const MobileDetailPage = () => {
 
           </div>
 
-          {message ? (
-            <div
-              className={`mb-4 rounded-xl px-4 py-3 text-sm ${message.includes("실패") || message.includes("먼저")
-                  ? "border border-red-200 bg-red-50 text-red-700"
-                  : "border border-green-200 bg-green-50 text-green-700"
-                }`}
-            >
-              {message}
-            </div>
-          ) : null}
+          
 
           {item ? (
             <div className="grid grid-cols-1 gap-4">
@@ -927,6 +918,16 @@ const MobileDetailPage = () => {
               >
                 {uploadMutation.isPending ? "저장 중..." : "이미지 저장"}
               </button>
+              {message ? (
+            <div
+              className={`mb-4 rounded-xl px-4 py-3 text-sm ${message.includes("실패") || message.includes("먼저")
+                  ? "border border-red-200 bg-red-50 text-red-700"
+                  : "border border-green-200 bg-green-50 text-green-700"
+                }`}
+            >
+              {message}
+            </div>
+          ) : null}
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">

@@ -167,7 +167,7 @@ const MobileDashboardPage = () => {
                   <option value="vulnerable">취약계층</option>
                   <option value="senior">어르신</option>
                 </select>
-
+                {activeTab !== "ARCHIVE"?
                 <select
                   value={sort}
                   onChange={handleSortChange}
@@ -175,8 +175,8 @@ const MobileDashboardPage = () => {
                 >
                   <option value="localNo">연번 정렬</option>
                   <option value="dong">동별 정렬</option>
-                </select>
-
+                </select>:null}
+                {activeTab !== "ARCHIVE"?
                 <select
                   value={order}
                   onChange={handleOrderChange}
@@ -184,7 +184,7 @@ const MobileDashboardPage = () => {
                 >
                   <option value="asc">오름차순</option>
                   <option value="desc">내림차순</option>
-                </select>
+                </select>:null}
 
                 <select
                   value={pageSize}

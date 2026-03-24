@@ -180,7 +180,7 @@ const MobileDashboardPage = () => {
                 <select
                   value={group}
                   onChange={handleGroupChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                  className="hidden w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
                 >
                   <option value="">전체 그룹</option>
                   <option value="vulnerable">취약계층</option>

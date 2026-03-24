@@ -14,7 +14,8 @@ import type {
 } from "@/types/survey";
 import { useEffect, useMemo, useState } from "react";
 import crypto from "crypto";
-
+import { v4 as uuidv4 } from 'uuid';
+const uuid = uuidv4();
 type MultipleChoiceQuestion = {
   id: string | number;
   type: "multiple";
@@ -29,14 +30,14 @@ type SubjectiveQuestion = {
 };
 
 const createMultipleQuestion = (): MultipleChoiceQuestion => ({
-  id: crypto.randomUUID(),
+  id: uuid,
   type: "multiple",
   question: "",
   options: ["", "", "", "", ""],
 });
 
 const createSubjectiveQuestion = (): SubjectiveQuestion => ({
-  id: crypto.randomUUID(),
+  id: uuid,
   type: "subjective",
   question: "",
 });

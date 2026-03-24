@@ -20,6 +20,10 @@ function buildQueryString(params: CleanUpHouseholdListParams) {
   if (params.isArchived !== undefined) {
     searchParams.set("isArchived", String(params.isArchived));
   }
+  // [수정] 작업완료 여부 전달 추가
+  if (params.isComplete !== undefined) {
+    searchParams.set("isComplete", String(params.isComplete));
+  }
   return searchParams.toString();
 }
 
@@ -27,7 +31,7 @@ export async function getCleanUpHouseholdList(
   params: CleanUpHouseholdListParams
 ): Promise<CleanUpHouseholdListResponse> {
   const queryString = buildQueryString(params);
-
+  console.log(queryString);
   const response = await fetch(`${BACKEND_URL}/households/list?${queryString}`, {
     method: "GET",
     credentials: "include",
@@ -93,9 +97,10 @@ export async function uploadCleanUpHouseholdPhotos(
   return data;
 }
 
-export async function archiveCleanUpHousehold(id: number) {
+export async function archiveCleanUpHousehold(id: number,is_complete?:boolean) {
   // 백엔드 주소에 맞춰 PATCH 요청 전송
-  
-  const response = await axios.patch(`${BACKEND_URL}/households/${id}/archive`);
+  const response = await axios.patch(`${BACKEND_URL}/households/${id}/archive`, {
+    is_complete: is_complete ?? false // 서버에서 req.body.is_complete로 받게 됨
+  });
   return response.data;
 }

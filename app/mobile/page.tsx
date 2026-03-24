@@ -2,6 +2,7 @@
 
 import { useArchiveCleanUpHousehold, useCleanUpHouseholdList } from "@/hooks/useCleanUpHousehold";
 import Link from "next/link";
+import Swal from 'sweetalert2'
 import {
   CleanUpHouseholdGroup,
   CleanUpHouseholdSortField,
@@ -16,13 +17,14 @@ import {
   List,
   Archive,
   RotateCcw,
+  CheckCircle,
   ChevronUp,   // 추가
   ChevronDown  // 추가
 } from "lucide-react";
 import { openKakaoNavi } from "@/lib/navigation";
 import axios from "axios";
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
-type TabType = "LIST" | "ARCHIVE";
+type TabType = "LIST" | "ARCHIVE" | "COMPLETE"; // COMPLETE 추가
 const MobileDashboardPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>("LIST"); // 탭 상태 추가
   const router = useRouter();
@@ -41,25 +43,40 @@ const MobileDashboardPage = () => {
   const archiveMutation = useArchiveCleanUpHousehold(); // 4. 보관 뮤테이션 사용
   // 보관/복구 핸들러 (탭에 따라 동작 다르게)
   const handleToggleArchive = async (id: number, name: string, isArchiving: boolean) => {
-    await archiveMutation.mutateAsync(id);
-
+    if (!isArchiving) {
+      Swal.fire({
+        title: `${name}님의 상태를 어떻게 변경하시겠습니까?`,
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: "목록으로",
+        denyButtonText: `작업완료`,
+        cancelButtonText: "취소"
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          // 객체 형태로 전달
+          await archiveMutation.mutateAsync({ id });
+        } else if (result.isDenied) {
+          // is_complete를 true로 전달
+          await archiveMutation.mutateAsync({ id, is_complete: true });
+        }
+      });
+    } else {
+      await archiveMutation.mutateAsync({ id });
+    }
   };
 
 
-  const queryParams = useMemo(
-    () => ({
-      page,
-      pageSize,
-      q,
-      group,
-      sort,
-      order,
-      // 탭에 따라 백엔드에 보관 여부 전달
-      isArchived: activeTab === "ARCHIVE",
-    }),
-    [page, pageSize, q, group, sort, order, activeTab]
-  );
-  
+  const queryParams = useMemo(() => ({
+    page,
+    pageSize,
+    q,
+    group,
+    sort,
+    order,
+    isArchived: activeTab === "ARCHIVE",
+    isComplete: activeTab === "COMPLETE", // 추가
+  }), [page, pageSize, q, group, sort, order, activeTab]);
+
 
   const { data, isLoading, isError, error } = useCleanUpHouseholdList(queryParams);
 
@@ -120,9 +137,11 @@ const MobileDashboardPage = () => {
         <div className="relative flex h-14 items-center justify-between px-4">
 
 
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-bold text-gray-900">
-            대상자 목록
-          </h1>
+          <h1 className="text-lg font-bold">
+          {activeTab === "LIST" && "청소목록"}
+          {activeTab === "ARCHIVE" && "오늘 작업 동선"}
+          {activeTab === "COMPLETE" && "작업완료 목록"}
+        </h1>
 
 
         </div>
@@ -148,7 +167,7 @@ const MobileDashboardPage = () => {
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="space-y-3">
             <div>
-              <h2 className="text-lg font-bold">냉방기 클린UP 건강프로젝트<br /> 대상자 목록</h2>
+              <h2 className="text-lg font-bold">2026년 냉방기 세척 클린UP 사업<br /> 대상자 목록</h2>
               <p className="mt-1 text-sm text-gray-500">
                 성명, 휴대폰, 대리인 연락처, 도로명주소로 검색할 수 있습니다.
               </p>
@@ -167,24 +186,24 @@ const MobileDashboardPage = () => {
                   <option value="vulnerable">취약계층</option>
                   <option value="senior">어르신</option>
                 </select>
-                {activeTab !== "ARCHIVE"?
-                <select
-                  value={sort}
-                  onChange={handleSortChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-                >
-                  <option value="localNo">연번 정렬</option>
-                  <option value="dong">동별 정렬</option>
-                </select>:null}
-                {activeTab !== "ARCHIVE"?
-                <select
-                  value={order}
-                  onChange={handleOrderChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-                >
-                  <option value="asc">오름차순</option>
-                  <option value="desc">내림차순</option>
-                </select>:null}
+                {activeTab !== "ARCHIVE" ?
+                  <select
+                    value={sort}
+                    onChange={handleSortChange}
+                    className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                  >
+                    <option value="localNo">연번 정렬</option>
+                    <option value="dong">동별 정렬</option>
+                  </select> : null}
+                {activeTab !== "ARCHIVE" ?
+                  <select
+                    value={order}
+                    onChange={handleOrderChange}
+                    className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                  >
+                    <option value="asc">오름차순</option>
+                    <option value="desc">내림차순</option>
+                  </select> : null}
 
                 <select
                   value={pageSize}
@@ -235,7 +254,12 @@ const MobileDashboardPage = () => {
               <SwipeableItem
                 key={item.id}
                 isArchive={activeTab === "ARCHIVE"}
-                onArchive={() => handleToggleArchive(item.id, item.name, activeTab === "LIST")}
+                // 1. 작업완료 탭일 때는 onArchive를 전달하지 않아 스와이프 비활성화
+                onArchive={
+                  activeTab === "COMPLETE" 
+                    ? undefined
+                    : () => handleToggleArchive(item.id, item.name, activeTab === "LIST")
+                }
               >
                 <div className="relative block p-4 transition active:bg-gray-50">
                   <Link href={`/mobile/views/${item.id}`} className="block">
@@ -300,7 +324,7 @@ const MobileDashboardPage = () => {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          openKakaoNavi(item.roadAddress,item.longitude??"",item.latitude??"");
+                          openKakaoNavi(item.roadAddress, item.longitude ?? "", item.latitude ?? "");
                         }}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-[#191919] active:opacity-80"
                       >
@@ -353,24 +377,34 @@ const MobileDashboardPage = () => {
           </div>
         </section>
       </main>
+      {/* 하단 탭 내비게이션 */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 pb-safe backdrop-blur">
         <div className="mx-auto flex h-16 max-w-md items-center justify-around">
+          {/* 1. 청소목록 */}
           <button
             onClick={() => { setActiveTab("LIST"); setPage(1); }}
-            className={`flex flex-col items-center gap-1 transition ${activeTab === "LIST" ? "text-blue-600" : "text-gray-400"
-              }`}
+            className={`flex flex-col items-center gap-1 transition ${activeTab === "LIST" ? "text-blue-600" : "text-gray-400"}`}
           >
             <List size={20} />
             <span className="text-[10px] font-bold">청소목록</span>
           </button>
 
+          {/* 2. 오늘 작업 동선 */}
           <button
             onClick={() => { setActiveTab("ARCHIVE"); setPage(1); }}
-            className={`flex flex-col items-center gap-1 transition ${activeTab === "ARCHIVE" ? "text-blue-600" : "text-gray-400"
-              }`}
+            className={`flex flex-col items-center gap-1 transition ${activeTab === "ARCHIVE" ? "text-blue-600" : "text-gray-400"}`}
           >
             <Archive size={20} />
-            <span className="text-[10px] font-bold">오늘 작업 동선</span>
+            <span className="text-[10px] font-bold">작업동선</span>
+          </button>
+
+          {/* 3. 작업완료 (새로 추가) */}
+          <button
+            onClick={() => { setActiveTab("COMPLETE"); setPage(1); }}
+            className={`flex flex-col items-center gap-1 transition ${activeTab === "COMPLETE" ? "text-green-600" : "text-gray-400"}`}
+          >
+            <CheckCircle size={20} />
+            <span className="text-[10px] font-bold">작업완료</span>
           </button>
         </div>
       </nav>

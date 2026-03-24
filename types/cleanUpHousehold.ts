@@ -25,6 +25,7 @@ export type CleanUpHouseholdListParams = {
   sort?: CleanUpHouseholdSortField;
   order?: SortOrder;
   isArchived?: boolean; // 추가
+  isComplete?:boolean;
 };
 
 export type CleanUpHouseholdListResponse = {

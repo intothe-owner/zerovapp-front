@@ -79,7 +79,7 @@ const AdminExcelUploadPage = () => {
         programYear,
         listType,
         overwrite,
-      });
+      }); 
 
       alert("엑셀 업로드가 완료되었습니다.");
       setFile(null);
@@ -126,7 +126,7 @@ const AdminExcelUploadPage = () => {
                     max={2100}
                   />
                 </div>
-
+                
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700">명단 구분</label>
                   <select

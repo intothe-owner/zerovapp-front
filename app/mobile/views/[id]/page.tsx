@@ -32,7 +32,7 @@ function buildImageUrl(path?: string | null) {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
 
-  const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+  const base = process.env.NEXT_PUBLIC_S3_BASE_URL ?? "";
   if (!base) return path;
 
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
@@ -131,9 +131,9 @@ const MobileDetailPage = () => {
   const [reportCompanyName] = useState("(주)제로브이");
   const [reportCompanyPhone] = useState("051-545-1150");
 
-  const [reportJobName, setReportJobName] = useState("");
-  const [reportWorkDate, setReportWorkDate] = useState("");
-  const [reportWorkerName, setReportWorkerName] = useState("");
+  const [reportJobName, setReportJobName] = useState("김남관");
+  const [reportWorkDate, setReportWorkDate] = useState("해운대구 취약계층 에어컨 클린UP");
+  const [reportWorkerName, setReportWorkerName] = useState("김남관");
   const [reportMemo, setReportMemo] = useState("");
 
   useEffect(() => {
@@ -221,15 +221,26 @@ const MobileDetailPage = () => {
   const [subjectiveAnswers, setSubjectiveAnswers] = useState<Record<number, string>>(
     {}
   );
-  const [surveyMonth, setSurveyMonth] = useState("");
-  const [surveyDay, setSurveyDay] = useState("");
-  const [surveyName, setSurveyName] = useState("");
+  const [surveyMonth, setSurveyMonth] = useState<string>("");
+  const [surveyDay, setSurveyDay] = useState<string>("");
+  const [surveyName, setSurveyName] = useState<string>("김남관");
 
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string>("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
+
+  useEffect(()=>{
+    const date = new Date();
+    setSurveyMonth(`${date.getMonth()+1}`);
+    setSurveyDay(`${date.getDate()}`);
+    const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const dd = String(today.getDate()).padStart(2, "0");
+    setReportWorkDate(`${yyyy}.${mm}.${dd}`);
+  },[])
 
   useEffect(() => {
     if (!savedSurveyResponse) return;
@@ -592,7 +603,6 @@ const MobileDetailPage = () => {
 
   const openPdfModal = () => {
     if (!item) return;
-
     if (!reportWorkDate) {
       const today = new Date();
       const yyyy = today.getFullYear();
@@ -600,8 +610,8 @@ const MobileDetailPage = () => {
       const dd = String(today.getDate()).padStart(2, "0");
       setReportWorkDate(`${yyyy}-${mm}-${dd}`);
     }
-
-    setIsPdfModalOpen(true);
+    handleGeneratePdf();
+    //setIsPdfModalOpen(true);
   };
 
   const closePdfModal = () => {
@@ -679,42 +689,6 @@ const MobileDetailPage = () => {
     }
   };
 
-  const handleDownloadSavedPdf = async () => {
-    if (!savedWorkReportId) {
-      alert("저장된 PDF가 없습니다.");
-      return;
-    }
-
-    try {
-      setPdfLoading(true);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/work-reports/${savedWorkReportId}/download`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        throw new Error(json?.message || "PDF 다운로드에 실패했습니다.");
-      }
-
-      const blob = await res.blob();
-      const fileName = parseFileNameFromDisposition(
-        res.headers.get("Content-Disposition"),
-        item?.dong,
-        item?.name
-      );
-
-      await downloadBlobFile(blob, fileName);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
-    } finally {
-      setPdfLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -803,22 +777,7 @@ const MobileDetailPage = () => {
             </div>
           ) : (
             <div className="mt-4 space-y-4">
-              {/* <div className="rounded-2xl border border-gray-200 p-4">
-                <h3 className="mb-3 text-base font-bold">기본 정보</h3>
-                <div className="space-y-2">
-                  <DetailRow label="ID" value={item.id} />
-                  <DetailRow label="사업연도" value={item.programYear ?? "-"} />
-                  <DetailRow label="명단 구분" value={labelListType(item.listType)} />
-                  <DetailRow label="연번" value={item.localNo ?? "-"} />
-                  <DetailRow label="구분 코드" value={item.categoryCode ?? "-"} />
-                  <DetailRow label="동" value={item.dong ?? "-"} />
-                  <DetailRow label="수급형태" value={item.benefitType ?? "-"} />
-                  <DetailRow
-                    label="등록일시"
-                    value={formatDateTime(item.createdAt)}
-                  />
-                </div>
-              </div> */}
+              
 
               <div className="rounded-2xl border border-gray-200 p-4">
                 <h3 className="mb-3 text-base font-bold">개인/연락처 정보</h3>
@@ -1142,7 +1101,7 @@ const MobileDetailPage = () => {
         </div>
       )}
 
-      {isPdfModalOpen && (
+      {/* {isPdfModalOpen && (
         <div className="fixed inset-0 z-[110] bg-black/50">
           <div className="flex min-h-screen items-end justify-center sm:items-center">
             <div className="flex h-[94dvh] w-full max-w-lg flex-col rounded-t-3xl bg-white shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-2xl">
@@ -1220,12 +1179,7 @@ const MobileDetailPage = () => {
                     <label className="mb-2 block text-sm font-semibold text-gray-700">
                       작업일자 <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="date"
-                      value={reportWorkDate}
-                      onChange={(e) => setReportWorkDate(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:border-blue-500"
-                    />
+                    {reportWorkDate}
                   </div>
 
                   <div>
@@ -1297,7 +1251,7 @@ const MobileDetailPage = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

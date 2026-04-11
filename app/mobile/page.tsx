@@ -19,7 +19,8 @@ import {
   CheckCircle,
   ChevronUp,   // 추가
   ChevronDown,  // 추가
-  Trash2
+  Trash2,
+  Plus
 } from "lucide-react";
 import { openKakaoNavi } from "@/lib/navigation";
 import axios from "axios";
@@ -155,7 +156,7 @@ const MobileDashboardPage = () => {
       }
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
@@ -163,10 +164,10 @@ const MobileDashboardPage = () => {
 
 
           <h1 className="text-lg font-bold">
-          {activeTab === "LIST" && "청소목록"}
-          {activeTab === "ARCHIVE" && "오늘 작업 동선"}
-          {activeTab === "COMPLETE" && "작업완료 목록"}
-        </h1>
+            {activeTab === "LIST" && "청소목록"}
+            {activeTab === "ARCHIVE" && "오늘 작업 동선"}
+            {activeTab === "COMPLETE" && "작업완료 목록"}
+          </h1>
 
 
         </div>
@@ -279,7 +280,7 @@ const MobileDashboardPage = () => {
               key={item.id}
               isArchive={activeTab === "ARCHIVE"}
               onArchive={
-                activeTab === "COMPLETE" 
+                activeTab === "COMPLETE"
                   ? undefined
                   : () => handleToggleArchive(item.id, item.name, activeTab === "LIST")
               }
@@ -412,6 +413,12 @@ const MobileDashboardPage = () => {
           </div>
         </section>
       </main>
+      <Link
+        href="/mobile/register"
+        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gray-900 text-white shadow-xl transition-transform active:scale-95"
+      >
+        <Plus size={28} />
+      </Link>
       {/* 하단 탭 내비게이션 */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 pb-safe backdrop-blur">
         <div className="mx-auto flex h-16 max-w-md items-center justify-around">

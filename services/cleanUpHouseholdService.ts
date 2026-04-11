@@ -104,3 +104,25 @@ export async function archiveCleanUpHousehold(id: number,is_complete?:boolean) {
   });
   return response.data;
 }
+
+
+// services/cleanUpHouseholdService.ts 에 추가
+
+export async function createCleanUpHousehold(payload: any) {
+  const response = await fetch(`${BACKEND_URL}/households`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+    credentials: "include",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.message || "대상자 등록에 실패했습니다.");
+  }
+
+  return data;
+}

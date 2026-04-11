@@ -7,6 +7,7 @@ import {
   uploadCleanUpHouseholdPhotos,
   archiveCleanUpHousehold,
   type UploadHouseholdPhotosPayload,
+  createCleanUpHousehold,
 } from "@/services/cleanUpHouseholdService";
 import { CleanUpHouseholdListParams } from "@/types/cleanUpHousehold";
 
@@ -48,6 +49,20 @@ export function useArchiveCleanUpHousehold() {
     onSuccess: () => {
       // 리스트 쿼리 키인 "clean-up-households"가 포함된 모든 데이터를 무효화하여 리스트를 갱신합니다.
       queryClient.invalidateQueries({ queryKey: ["clean-up-households"] });
+    },
+  });
+}
+
+export function useCreateCleanUpHousehold() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: any) => createCleanUpHousehold(payload),
+    onSuccess: () => {
+      // 등록 성공 시 가구 리스트 쿼리를 새로고침함
+      queryClient.invalidateQueries({
+        queryKey: ["clean-up-households"],
+      });
     },
   });
 }

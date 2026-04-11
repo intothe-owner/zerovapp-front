@@ -16,10 +16,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   List,
   Archive,
-  RotateCcw,
   CheckCircle,
   ChevronUp,   // 추가
-  ChevronDown  // 추가
+  ChevronDown,  // 추가
+  Trash2
 } from "lucide-react";
 import { openKakaoNavi } from "@/lib/navigation";
 import axios from "axios";
@@ -42,29 +42,31 @@ const MobileDashboardPage = () => {
   const queryClient = useQueryClient(); // 3. 인스턴스 생성 (오류 해결 포인트!)
   const archiveMutation = useArchiveCleanUpHousehold(); // 4. 보관 뮤테이션 사용
   // 보관/복구 핸들러 (탭에 따라 동작 다르게)
-  const handleToggleArchive = async (id: number, name: string, isArchiving: boolean) => {
-    if (!isArchiving) {
-      Swal.fire({
-        title: `${name}님의 상태를 어떻게 변경하시겠습니까?`,
-        showDenyButton: true,
-        showCancelButton: true,
-        confirmButtonText: "목록으로",
-        denyButtonText: `작업완료`,
-        cancelButtonText: "취소"
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          // 객체 형태로 전달
-          await archiveMutation.mutateAsync({ id });
-        } else if (result.isDenied) {
-          // is_complete를 true로 전달
-          await archiveMutation.mutateAsync({ id, is_complete: true });
-        }
-      });
+  const handleToggleArchive = async (id: number, name: string, isFromList: boolean) => {
+    if (isFromList) {
+      // 1. 청소목록 탭에서 스와이프 했을 때 (보관함으로 이동)
+      await archiveMutation.mutateAsync({ id });
     } else {
+      // 2. 보관함(작업동선) 탭에서 스와이프 했을 때 (즉시 목록으로 복구)
       await archiveMutation.mutateAsync({ id });
     }
   };
+  // 버튼 전용: 작업 완료 처리 함수
+  const handleCompleteTask = async (id: number, name: string) => {
+    const result = await Swal.fire({
+      title: '작업 완료 처리',
+      text: `${name}님의 작업을 완료 상태로 변경하시겠습니까?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '완료 처리',
+      cancelButtonText: '취소',
+      confirmButtonColor: '#2563eb'
+    });
 
+    if (result.isConfirmed) {
+      await archiveMutation.mutateAsync({ id, is_complete: true });
+    }
+  };
 
   const queryParams = useMemo(() => ({
     page,
@@ -131,6 +133,29 @@ const MobileDashboardPage = () => {
       alert("순서 변경에 실패했습니다.");
     }
   };
+
+  const handleDeleteTask = async (id: number, name: string) => {
+    const result = await Swal.fire({
+      title: '삭제 확인',
+      text: `${name}님의 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '삭제',
+      cancelButtonText: '취소',
+      confirmButtonColor: '#ef4444' // 빨간색
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/households/${id}`);
+        Swal.fire('삭제됨', '성공적으로 삭제되었습니다.', 'success');
+        queryClient.invalidateQueries({ queryKey: ["clean-up-households"] });
+      } catch (error) {
+        Swal.fire('오류', '삭제 중 문제가 발생했습니다.', 'error');
+      }
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
@@ -249,94 +274,104 @@ const MobileDashboardPage = () => {
             <div className="rounded-2xl border border-gray-200 bg-white px-4 py-10 text-center text-sm text-gray-500 shadow-sm">
               조회된 데이터가 없습니다.
             </div>
-          ) : (
-            items.map((item, index) => (
-              <SwipeableItem
-                key={item.id}
-                isArchive={activeTab === "ARCHIVE"}
-                // 1. 작업완료 탭일 때는 onArchive를 전달하지 않아 스와이프 비활성화
-                onArchive={
-                  activeTab === "COMPLETE" 
-                    ? undefined
-                    : () => handleToggleArchive(item.id, item.name, activeTab === "LIST")
-                }
-              >
-                <div className="relative block p-4 transition active:bg-gray-50">
-                  <Link href={`/mobile/views/${item.id}`} className="block">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[11px] font-medium text-gray-400">연번 {item.no ?? "-"}</p>
-                        <h3 className="mt-0.5 text-lg font-extrabold text-blue-600">{item.name}</h3>
-                      </div>
-                      {activeTab === "ARCHIVE" && <Archive size={14} className="text-gray-400" />}
-                    </div>
-
-                    {/* 정보 영역과 버튼 영역을 flex로 분리 */}
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      {/* 왼쪽: 주소 및 연락처 정보 */}
-                      <div className="flex-1 space-y-1 text-[13px]">
-                        <div className="flex items-center gap-3">
-                          <span className="w-16 font-semibold text-gray-400">휴대폰</span>
-                          <span className="font-medium text-gray-700">{item.phone || "-"}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="w-16 font-semibold text-gray-400">도로명주소</span>
-                          <span className="flex-1 truncate font-medium text-gray-700">
-                            {item.roadAddress || "-"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* 오른쪽: 순서 조정 버튼 (보관함에서만 표시) */}
-                      {activeTab === "ARCHIVE" && (
-                        <div className="flex flex-col gap-1 border-l border-gray-100 pl-3">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleMove(index, 'up');
-                            }}
-                            disabled={index === 0}
-                            className="rounded-md bg-gray-50 p-1.5 active:bg-gray-200 disabled:opacity-20"
-                          >
-                            <ChevronUp size={20} className="text-gray-600" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleMove(index, 'down');
-                            }}
-                            disabled={index === items.length - 1}
-                            className="rounded-md bg-gray-50 p-1.5 active:bg-gray-200 disabled:opacity-20"
-                          >
-                            <ChevronDown size={20} className="text-gray-600" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+          ) : items.map((item, index) => (
+            <SwipeableItem
+              key={item.id}
+              isArchive={activeTab === "ARCHIVE"}
+              onArchive={
+                activeTab === "COMPLETE" 
+                  ? undefined
+                  : () => handleToggleArchive(item.id, item.name, activeTab === "LIST")
+              }
+            >
+              <div className="relative block p-4 transition active:bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <Link href={`/mobile/views/${item.id}`} className="flex-1 block">
+                    <p className="text-[11px] font-medium text-gray-400">연번 {item.no ?? "-"}</p>
+                    <h3 className="mt-0.5 text-lg font-extrabold text-blue-600 inline-block">{item.name}</h3>
                   </Link>
 
-                  {/* 카카오내비 버튼 (보관함 전용) */}
-                  {activeTab === "ARCHIVE" && (
-                    <div className="mt-4 flex justify-end border-t border-gray-100 pt-3">
+                  {/* 아이콘 버튼 영역 (이미지 요청 사항) */}
+                  <div className="flex items-center gap-2">
+                    {/* 1. 휴지통 삭제 버튼 (목록과 보관함에서 표시) */}
+                    {(activeTab === "LIST" || activeTab === "ARCHIVE") && (
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openKakaoNavi(item.roadAddress, item.longitude ?? "", item.latitude ?? "");
-                        }}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-[#191919] active:opacity-80"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteTask(item.id, item.name); }}
+                        className="flex flex-col items-center justify-center rounded-lg border border-red-500 p-1 px-2 text-red-500 active:bg-red-50"
                       >
-                        <img src="/icons/kakaonavi.png" alt="" className="w-5 h-5" />
-                        카카오내비 길안내 시작
+                        <Trash2 size={20} />
+                        <span className="text-[10px] font-bold">삭제</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+
+                    {/* 2. 완료 체크 버튼 (보관함에서만 표시) */}
+                    {activeTab === "ARCHIVE" && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCompleteTask(item.id, item.name); }}
+                        className="flex flex-col items-center justify-center rounded-lg border border-blue-600 p-1 px-2 text-blue-600 active:bg-blue-50"
+                      >
+                        <CheckCircle size={20} />
+                        <span className="text-[10px] font-bold">완료</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </SwipeableItem>
-            ))
-          )}
+
+                <Link href={`/mobile/views/${item.id}`} className="block mt-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 space-y-1 text-[13px]">
+                      <div className="flex items-center gap-3">
+                        <span className="w-16 font-semibold text-gray-400">휴대폰</span>
+                        <span className="font-medium text-gray-700">{item.phone || "-"}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="w-16 font-semibold text-gray-400">도로명주소</span>
+                        <span className="flex-1 truncate font-medium text-gray-700">
+                          {item.roadAddress || "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 순서 변경 버튼 (보관함 전용) */}
+                    {activeTab === "ARCHIVE" && (
+                      <div className="flex flex-col gap-1 border-l border-gray-100 pl-3">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMove(index, 'up'); }}
+                          disabled={index === 0}
+                          className="rounded-md bg-gray-50 p-1.5 disabled:opacity-20"
+                        >
+                          <ChevronUp size={20} className="text-gray-600" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleMove(index, 'down'); }}
+                          disabled={index === items.length - 1}
+                          className="rounded-md bg-gray-50 p-1.5 disabled:opacity-20"
+                        >
+                          <ChevronDown size={20} className="text-gray-600" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </Link>
+
+                {/* 카카오내비 버튼 (보관함 전용) */}
+                {activeTab === "ARCHIVE" && (
+                  <div className="mt-4 border-t border-gray-100 pt-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openKakaoNavi(item.roadAddress, item.longitude ?? "", item.latitude ?? "");
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-sm font-bold text-[#191919] active:opacity-80"
+                    >
+                      <img src="/icons/kakaonavi.png" alt="" className="w-5 h-5" />
+                      카카오내비 길안내 시작
+                    </button>
+                  </div>
+                )}
+              </div>
+            </SwipeableItem>
+          ))}
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-20">

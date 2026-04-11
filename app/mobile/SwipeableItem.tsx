@@ -34,7 +34,7 @@ const SwipeableItem = ({ children, onArchive, isArchive }: Props) => {
         <motion.div style={{ opacity, scale }} className="flex flex-col items-center gap-1">
           {isArchive ? <RotateCcw size={28} /> : <Archive size={28} />}
           <span className="text-[10px] font-bold">
-            {isArchive ? '상태 변경' : '보관함으로'}
+            {isArchive ? '목록으로' : '작업 동선'}
           </span>
         </motion.div>
       </motion.div>

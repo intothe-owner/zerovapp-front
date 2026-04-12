@@ -223,7 +223,7 @@ const MobileDetailPage = () => {
   );
   const [surveyMonth, setSurveyMonth] = useState<string>("");
   const [surveyDay, setSurveyDay] = useState<string>("");
-  const [surveyName, setSurveyName] = useState<string>("김남관");
+  const [surveyName, setSurveyName] = useState<string>("");
 
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string>("");
@@ -463,6 +463,7 @@ const MobileDetailPage = () => {
           surveyDay,
           surveyName,
           signatureDataUrl,
+          reportMemo,
           answers,
         }),
       }
@@ -967,6 +968,45 @@ const MobileDetailPage = () => {
                     등록된 설문 문항이 없습니다.
                   </div>
                 )}
+                {/* 메모 */}
+                {survey.questions?.length ? (
+                <div className="mt-8 border-t border-dashed border-gray-200 pt-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] text-blue-600">
+                        Tip
+                      </span>
+                      남기실 메모 (선택)
+                    </label>
+                  </div>
+                  
+                  <div className="relative group">
+                    <select
+                      value={reportMemo}
+                      onChange={(e) => setReportMemo(e.target.value)}
+                      className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3.5 text-sm text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                    >
+                      <option value="" className="text-gray-400">--- 메모 내용을 선택해주세요 ---</option>
+                      <option value="에어컨 세척해 주셔서 감사합니다.">1. 에어컨 세척해 주셔서 감사합니다.</option>
+                      <option value="내년에도 선정되면 좋겠어요">2. 내년에도 선정되면 좋겠어요</option>
+                      <option value="구청 담당자님 감사합니다.">3. 구청 담당자님 감사합니다.</option>
+                      <option value="구청장님 감사합니다.">4. 구청장님 감사합니다.</option>
+                      <option value="기사님 감사합니다.">5. 기사님 감사합니다.</option>
+                    </select>
+                    
+                    {/* 셀렉트 박스 화살표 커스텀 아이콘 */}
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 group-focus-within:text-blue-500">
+                      <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  <p className="mt-2 text-[11px] text-gray-500 px-1">
+                    * 위 문구 중 하나를 선택하면 보고서 메모에 자동으로 입력됩니다.
+                  </p>
+                </div>
+              ) : null}
               </div>
 
               <div className="mt-6 rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-800">

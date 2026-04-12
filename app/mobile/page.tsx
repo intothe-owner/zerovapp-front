@@ -137,22 +137,22 @@ const MobileDashboardPage = () => {
 
   const handleDeleteTask = async (id: number, name: string) => {
     const result = await Swal.fire({
-      title: '삭제 확인',
-      text: `${name}님의 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+      title: '취소 확인',
+      text: `${name}님의 작업을 취소하시겠습니까? 취소하시면 보고서 작성이 불가능합니다.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: '삭제',
+      confirmButtonText: '확인',
       cancelButtonText: '취소',
       confirmButtonColor: '#ef4444' // 빨간색
     });
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE_URL}/households/${id}`);
-        Swal.fire('삭제됨', '성공적으로 삭제되었습니다.', 'success');
+        await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/households/${id}`);
+        Swal.fire('취소됨', '성공적으로 취소되었습니다.', 'success');
         queryClient.invalidateQueries({ queryKey: ["clean-up-households"] });
       } catch (error) {
-        Swal.fire('오류', '삭제 중 문제가 발생했습니다.', 'error');
+        Swal.fire('오류', '취소 중 문제가 발생했습니다.', 'error');
       }
     }
   };
@@ -161,15 +161,11 @@ const MobileDashboardPage = () => {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="relative flex h-14 items-center justify-between px-4">
-
-
           <h1 className="text-lg font-bold">
             {activeTab === "LIST" && "청소목록"}
             {activeTab === "ARCHIVE" && "오늘 작업 동선"}
             {activeTab === "COMPLETE" && "작업완료 목록"}
           </h1>
-
-
         </div>
       </header>
 
@@ -280,14 +276,19 @@ const MobileDashboardPage = () => {
               key={item.id}
               isArchive={activeTab === "ARCHIVE"}
               onArchive={
-                activeTab === "COMPLETE"
+                activeTab === "COMPLETE" || item.isCancel
                   ? undefined
                   : () => handleToggleArchive(item.id, item.name, activeTab === "LIST")
               }
             >
-              <div className="relative block p-4 transition active:bg-gray-50">
+
+              <div className={`relative block p-4 transition ${item.isCancel
+                  ? 'bg-gray-50 opacity-60 grayscale pointer-events-none select-none'
+                  : 'active:bg-gray-50 bg-white'
+                }`}>
                 <div className="flex items-start justify-between">
-                  <Link href={`/mobile/views/${item.id}`} className="flex-1 block">
+
+                  <Link href={item.isCancel ? 'javascript:;' : `/mobile/views/${item.id}`} className="flex-1 block">
                     <p className="text-[11px] font-medium text-gray-400">연번 {item.no ?? "-"}</p>
                     <h3 className="mt-0.5 text-lg font-extrabold text-blue-600 inline-block">{item.name}</h3>
                   </Link>
@@ -301,7 +302,7 @@ const MobileDashboardPage = () => {
                         className="flex flex-col items-center justify-center rounded-lg border border-red-500 p-1 px-2 text-red-500 active:bg-red-50"
                       >
                         <Trash2 size={20} />
-                        <span className="text-[10px] font-bold">삭제</span>
+                        <span className="text-[10px] font-bold">취소</span>
                       </button>
                     )}
 
@@ -318,7 +319,7 @@ const MobileDashboardPage = () => {
                   </div>
                 </div>
 
-                <Link href={`/mobile/views/${item.id}`} className="block mt-3">
+                <Link href={item.isCancel ? 'javascript:;' : `/mobile/views/${item.id}`} className="block mt-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 space-y-1 text-[13px]">
                       <div className="flex items-center gap-3">

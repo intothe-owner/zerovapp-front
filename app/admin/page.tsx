@@ -9,7 +9,7 @@ import {
   CleanUpHouseholdSortField,
   SortOrder,
 } from "@/types/cleanUpHousehold";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState,Suspense } from "react";
 // ✅ 상태 유지를 위해 필요한 import
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { CheckCircle, List } from "lucide-react";
@@ -91,6 +91,7 @@ const AdminDashboardTemplate = () => {
   const pagination = data?.pagination;
 
   return (
+    <Suspense fallback={<div>로딩 중...</div>}>
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
       {sidebarOpen && (
         <div
@@ -346,6 +347,7 @@ const AdminDashboardTemplate = () => {
         </main>
       </div>
     </div>
+    </Suspense>
   );
 };
 

@@ -16,7 +16,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ChevronLeft, FileText, Download, Home } from "lucide-react";
+import { ChevronLeft, Phone } from "lucide-react"
 
 
 
@@ -86,7 +86,41 @@ function DetailRow({
     </div>
   );
 }
-
+function PhoneDetailRow({
+  label,
+  value,
+  color = "blue", // 아이콘 색상 테마 (blue 또는 green)
+}: {
+  label: string;
+  value: string | null | undefined;
+  color?: "blue" | "green";
+}) {
+  const isGreen = color === "green";
+  
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+      <div className="flex-1 min-w-0">
+        <div className="text-xs font-medium text-gray-500">{label}</div>
+        <div className="mt-1 break-words text-sm font-semibold text-gray-900">
+          {value || "-"}
+        </div>
+      </div>
+      
+      {value && (
+        <a
+          href={`tel:${value}`}
+          className={`ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all active:scale-90 ${
+            isGreen 
+              ? "bg-green-100 text-green-600 shadow-sm" 
+              : "bg-blue-100 text-blue-600 shadow-sm"
+          }`}
+        >
+          <Phone size={18} />
+        </a>
+      )}
+    </div>
+  );
+}
 const MobileDetailPage = () => {
   const params = useParams();
   const router = useRouter();
@@ -785,8 +819,8 @@ const MobileDetailPage = () => {
                 <div className="space-y-2">
                   <DetailRow label="성명" value={item.name ?? "-"} />
                   <DetailRow label="주민번호" value={maskRrn(item.rrn)} />
-                  <DetailRow label="휴대폰" value={item.phone || "-"} />
-                  <DetailRow label="대리인 연락처" value={item.proxyPhone || "-"} />
+                  <PhoneDetailRow label="휴대폰" value={item.phone || "-"} />
+                  <PhoneDetailRow label="대리인 연락처" value={item.proxyPhone || "-"} />
                   <DetailRow label="도로명주소" value={item.roadAddress || "-"} />
                   <DetailRow label="상세주소" value={item.detailAddress || "-"} />
                 </div>

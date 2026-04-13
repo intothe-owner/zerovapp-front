@@ -136,11 +136,20 @@ const AdminDetailPage = () => {
     const [reportCompanyName] = useState("(주)제로브이");
     const [reportCompanyPhone] = useState("051-545-1150");
 
-    const [reportJobName, setReportJobName] = useState("");
-    const [reportWorkDate, setReportWorkDate] = useState("");
-    const [reportWorkerName, setReportWorkerName] = useState("");
+    const [reportJobName, setReportJobName] = useState("김남관");
+    const [reportWorkDate, setReportWorkDate] = useState("해운대구 취약계층 에어컨 클린UP");
+    const [reportWorkerName, setReportWorkerName] = useState("김남관");
     const [reportMemo, setReportMemo] = useState("");
-
+    useEffect(() => {
+        const date = new Date();
+        setSurveyMonth(`${date.getMonth() + 1}`);
+        setSurveyDay(`${date.getDate()}`);
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        setReportWorkDate(`${yyyy}.${mm}.${dd}`);
+    }, [])
     useEffect(() => {
         return () => {
             Object.values(previewUrls).forEach((url) => {
@@ -496,32 +505,32 @@ const AdminDetailPage = () => {
         return json?.item ?? null;
     };
     const makePdfFileName = (dong?: string | null, name?: string | null) => {
-    const safeDong = dong?.trim() ?? "";
-    const safeName = name?.trim() ?? "";
+        const safeDong = dong?.trim() ?? "";
+        const safeName = name?.trim() ?? "";
 
-    const base = `${safeDong}${safeName}보고서`.replace(/\s+/g, "");
-    return base ? `${base}.pdf` : "작업보고서.pdf";
-};
+        const base = `${safeDong}${safeName}보고서`.replace(/\s+/g, "");
+        return base ? `${base}.pdf` : "작업보고서.pdf";
+    };
 
-const parseFileNameFromDisposition = (
-    disposition: string | null,
-    dong?: string | null,
-    name?: string | null
-) => {
-    if (disposition) {
-        const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-        if (utfMatch?.[1]) {
-            return decodeURIComponent(utfMatch[1]);
+    const parseFileNameFromDisposition = (
+        disposition: string | null,
+        dong?: string | null,
+        name?: string | null
+    ) => {
+        if (disposition) {
+            const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            if (utfMatch?.[1]) {
+                return decodeURIComponent(utfMatch[1]);
+            }
+
+            const asciiMatch = disposition.match(/filename="([^"]+)"/i);
+            if (asciiMatch?.[1]) {
+                return asciiMatch[1];
+            }
         }
 
-        const asciiMatch = disposition.match(/filename="([^"]+)"/i);
-        if (asciiMatch?.[1]) {
-            return asciiMatch[1];
-        }
-    }
-
-    return makePdfFileName(dong, name);
-};
+        return makePdfFileName(dong, name);
+    };
 
     const downloadBlobFile = (blob: Blob, fileName: string) => {
         const url = window.URL.createObjectURL(blob);
@@ -573,14 +582,15 @@ const parseFileNameFromDisposition = (
             const dd = String(today.getDate()).padStart(2, "0");
             setReportWorkDate(`${yyyy}-${mm}-${dd}`);
         }
-
-        setIsPdfModalOpen(true);
+        handleGeneratePdf();
+        // setIsPdfModalOpen(true);
     };
 
     const closePdfModal = () => {
         if (pdfLoading) return;
         setIsPdfModalOpen(false);
     };
+
 
     const handleGeneratePdf = async () => {
         if (!item?.id) return;
@@ -625,14 +635,14 @@ const parseFileNameFromDisposition = (
                 throw new Error(json?.message || "PDF 생성에 실패했습니다.");
             }
 
-           const blob = await res.blob();
+            const blob = await res.blob();
             const fileName = parseFileNameFromDisposition(
                 res.headers.get("Content-Disposition"),
                 item?.dong,
                 item?.name
             );
 
-            downloadBlobFile(blob, fileName);
+            await downloadBlobFile(blob, fileName);
 
             const latest = await fetchLatestWorkReport(item.id);
             if (latest) {
@@ -675,13 +685,13 @@ const parseFileNameFromDisposition = (
             }
 
             const blob = await res.blob();
-const fileName = parseFileNameFromDisposition(
-    res.headers.get("Content-Disposition"),
-    item?.dong,
-    item?.name
-);
+            const fileName = parseFileNameFromDisposition(
+                res.headers.get("Content-Disposition"),
+                item?.dong,
+                item?.name
+            );
 
-downloadBlobFile(blob, fileName);
+            downloadBlobFile(blob, fileName);
         } catch (err) {
             alert(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
         } finally {
@@ -746,7 +756,7 @@ downloadBlobFile(blob, fileName);
                                     disabled={!item}
                                     className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
-                                    PDF 파일 생성
+                                    PDF 파일 다운로드
                                 </button>
 
                                 {savedWorkReportId ? (
@@ -918,11 +928,10 @@ downloadBlobFile(blob, fileName);
 
                         {message ? (
                             <div
-                                className={`mb-4 rounded-xl px-4 py-3 text-sm ${
-                                    message.includes("실패") || message.includes("먼저")
-                                        ? "border border-red-200 bg-red-50 text-red-700"
-                                        : "border border-green-200 bg-green-50 text-green-700"
-                                }`}
+                                className={`mb-4 rounded-xl px-4 py-3 text-sm ${message.includes("실패") || message.includes("먼저")
+                                    ? "border border-red-200 bg-red-50 text-red-700"
+                                    : "border border-green-200 bg-green-50 text-green-700"
+                                    }`}
                             >
                                 {message}
                             </div>
@@ -995,7 +1004,7 @@ downloadBlobFile(blob, fileName);
                         </div>
 
                         {activeSurveyQuery.isLoading ||
-                        (item?.id ? surveyResponseQuery.isLoading : false) ? (
+                            (item?.id ? surveyResponseQuery.isLoading : false) ? (
                             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
                                 설문 정보를 불러오는 중입니다.
                             </div>
@@ -1045,7 +1054,7 @@ downloadBlobFile(blob, fileName);
                                                                                 className="h-4 w-4"
                                                                                 checked={
                                                                                     selectedAnswers[
-                                                                                        question.id
+                                                                                    question.id
                                                                                     ] === option.optionNo
                                                                                 }
                                                                                 onChange={() =>
@@ -1068,7 +1077,7 @@ downloadBlobFile(blob, fileName);
                                                                 <textarea
                                                                     value={
                                                                         subjectiveAnswers[
-                                                                            question.id
+                                                                        question.id
                                                                         ] || ""
                                                                     }
                                                                     onChange={(e) =>
@@ -1372,7 +1381,7 @@ downloadBlobFile(blob, fileName);
                                     disabled={pdfLoading}
                                     className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
                                 >
-                                    {pdfLoading ? "PDF 생성 중..." : "PDF 파일 생성"}
+                                    {pdfLoading ? "PDF 다운로드 중..." : "PDF 다운로드"}
                                 </button>
                             </div>
                         </div>

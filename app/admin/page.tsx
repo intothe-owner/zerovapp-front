@@ -10,23 +10,42 @@ import {
   SortOrder,
 } from "@/types/cleanUpHousehold";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+// ✅ 상태 유지를 위해 필요한 import
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { CheckCircle, List } from "lucide-react";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 30, 50, 100];
-
+type TabType = "LIST" | "COMPLETE";
 const AdminDashboardTemplate = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  // ✅ 1. URL에서 현재 탭과 페이지 번호 추출 (뒤로가기 시 상태 유지 핵심)
+  const activeTab = (searchParams.get("tab") as TabType) || "LIST";
 
-  const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-
+  // ✅ 2. URL 업데이트 함수
+  const updateUrlParams = (newTab: string, newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", newTab);
+    params.set("page", newPage.toString());
+    router.replace(`${pathname}?${params.toString()}`);
+  };
   const [searchInput, setSearchInput] = useState("");
   const [q, setQ] = useState("");
-
+  const page = Number(searchParams.get("page")) || 1;
   const [group, setGroup] = useState<CleanUpHouseholdGroup>("");
   const [sort, setSort] = useState<CleanUpHouseholdSortField>("localNo");
   const [order, setOrder] = useState<SortOrder>("asc");
-
+  const setPage = (newPage: number | ((prev: number) => number)) => {
+    const nextPage = typeof newPage === "function" ? newPage(page) : newPage;
+    updateUrlParams(activeTab, nextPage);
+  };
+  const handleTabChange = (tab: TabType) => {
+    updateUrlParams(tab, 1); // 탭 변경 시 1페이지로 이동
+  };
   const queryParams = useMemo(
     () => ({
       page,
@@ -35,8 +54,9 @@ const AdminDashboardTemplate = () => {
       group,
       sort,
       order,
+      isComplete: activeTab === "COMPLETE", // 완료 목록 요청 시 true
     }),
-    [page, pageSize, q, group, sort, order]
+    [page, pageSize, q, group, sort, order, activeTab]
   );
 
   const { data, isLoading, isError, error, isFetching } = useCleanUpHouseholdList(queryParams);
@@ -85,6 +105,41 @@ const AdminDashboardTemplate = () => {
         <Header sidebarOpen={sidebarOpen} onToggleSidebar={toggleSidebar} />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          <header className="mb-8">
+            <h1 className="text-3xl font-black tracking-tight text-gray-900">
+              {activeTab === "COMPLETE" ? "작업 완료 목록" : "대상자 관리"}
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {activeTab === "COMPLETE" 
+                ? "작업이 완료된 대상자들의 리스트와 최종 보고서를 확인합니다." 
+                : "전체 대상자 목록을 조회하고 작업 상태를 관리합니다."}
+            </p>
+          </header>
+          {/* ✅ 4. 탭 메뉴 디자인 추가 */}
+          <div className="flex items-center gap-2 mb-6 border-b border-gray-200">
+            <button
+              onClick={() => handleTabChange("LIST")}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+                activeTab === "LIST" 
+                  ? "border-blue-600 text-blue-600 bg-blue-50/50" 
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <List size={18} />
+              전체 목록
+            </button>
+            <button
+              onClick={() => handleTabChange("COMPLETE")}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+                activeTab === "COMPLETE" 
+                  ? "border-green-600 text-green-600 bg-green-50/50" 
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              <CheckCircle size={18} />
+              작업 완료
+            </button>
+          </div>
           <section className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
               <p className="text-sm text-gray-500">전체 건수</p>

@@ -167,7 +167,7 @@ const MobileDetailPage = () => {
 
   const [reportJobName, setReportJobName] = useState("김남관");
   const [reportWorkDate, setReportWorkDate] = useState("해운대구 취약계층 에어컨 클린UP");
-  const [reportWorkerName, setReportWorkerName] = useState("김남관");
+  const [reportWorkerName, setReportWorkerName] = useState("");
   const [reportMemo, setReportMemo] = useState("");
 
   useEffect(() => {
@@ -1048,11 +1048,19 @@ const MobileDetailPage = () => {
               </div>
 
               <div className="mt-4 space-y-3 rounded-xl border border-gray-200 p-4">
+                <input
+                    type="text"
+                    value={reportWorkerName}
+                    onChange={(e) => setReportWorkerName(e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm outline-none"
+                    placeholder="서비스담당"
+                />
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
                   <span>{new Date().getFullYear()}년</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
+                  
                   <input
                     type="text"
                     inputMode="numeric"
@@ -1094,7 +1102,7 @@ const MobileDetailPage = () => {
                   >
                     서명 입력
                   </button>
-
+                  
                   {signatureDataUrl ? (
                     <img
                       src={signatureDataUrl}
@@ -1102,6 +1110,7 @@ const MobileDetailPage = () => {
                       className="h-16 w-full rounded-xl border border-gray-300 bg-white object-contain"
                     />
                   ) : null}
+                  
                 </div>
               </div>
             </div>

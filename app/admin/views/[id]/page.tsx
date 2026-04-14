@@ -759,7 +759,7 @@ const AdminDetailPage = () => {
                                     PDF 파일 다운로드
                                 </button>
 
-                                {savedWorkReportId ? (
+                                {/* {savedWorkReportId ? (
                                     <button
                                         type="button"
                                         onClick={handleDownloadSavedPdf}
@@ -768,7 +768,7 @@ const AdminDetailPage = () => {
                                     >
                                         {pdfLoading ? "다운로드 중..." : "저장된 PDF 다운로드"}
                                     </button>
-                                ) : null}
+                                ) : null} */}
 
                                 <button
                                     type="button"

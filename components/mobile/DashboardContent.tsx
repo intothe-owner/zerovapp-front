@@ -8,7 +8,7 @@ import {
   CleanUpHouseholdSortField,
   SortOrder,
 } from "@/types/cleanUpHousehold";
-import { ChangeEvent, FormEvent, useMemo, useState,Suspense, useCallback } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, Suspense, useCallback } from "react";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import SwipeableItem from "./SwipeableItem";
@@ -21,7 +21,8 @@ import {
   ChevronDown,  // 추가
   Trash2,
   Plus,
-  Search
+  Search,
+  Home
 } from "lucide-react";
 import { openKakaoNavi } from "@/lib/navigation";
 import axios from "axios";
@@ -37,7 +38,7 @@ const DashboardContent = () => {
   const sort = (searchParams.get("sort") as CleanUpHouseholdSortField) || "localNo";
   const order = (searchParams.get("order") as SortOrder) || "asc";
   const q = searchParams.get("q") || "";
- 
+
   const group = (searchParams.get("group") as CleanUpHouseholdGroup) || "";
   const [searchInput, setSearchInput] = useState(q);
 
@@ -45,7 +46,7 @@ const DashboardContent = () => {
   const updateQueryParams = useCallback(
     (newParams: Record<string, string | number | undefined>) => {
       const params = new URLSearchParams(searchParams.toString());
-      
+
       Object.entries(newParams).forEach(([key, value]) => {
         if (value === undefined || value === "") {
           params.delete(key);
@@ -53,12 +54,12 @@ const DashboardContent = () => {
           params.set(key, String(value));
         }
       });
-      
+
       router.push(`${pathname}?${params.toString()}`);
     },
     [router, pathname, searchParams]
   );
-// 2. 상태 변경 시 URL 업데이트 함수
+  // 2. 상태 변경 시 URL 업데이트 함수
   const createQueryString = useCallback(
     (paramsToUpdate: Record<string, string | number>) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -75,10 +76,10 @@ const DashboardContent = () => {
     // pageSize만 유지하고 나머지는 제외
     router.push(`${pathname}?tab=${tab}&page=1&pageSize=${pageSize}`);
   };
-  
- 
-  
-  
+
+
+
+
 
   const queryClient = useQueryClient(); // 3. 인스턴스 생성 (오류 해결 포인트!)
   const archiveMutation = useArchiveCleanUpHousehold(); // 4. 보관 뮤테이션 사용
@@ -129,7 +130,7 @@ const DashboardContent = () => {
   const { data, isLoading, isError, error } = useCleanUpHouseholdList(queryParams);
 
 
- const handleSearch = (e: FormEvent) => {
+  const handleSearch = (e: FormEvent) => {
     e.preventDefault();
     updateQueryParams({ q: searchInput, page: 1 }); // 검색 시 페이지 1로 리셋
   };
@@ -142,7 +143,7 @@ const DashboardContent = () => {
     updateQueryParams({ group: e.target.value, page: 1 });
   };
 
- const handleSortChange = (e: ChangeEvent<HTMLSelectElement>) => {
+  const handleSortChange = (e: ChangeEvent<HTMLSelectElement>) => {
     updateQueryParams({ sort: e.target.value, page: 1 });
   };
 
@@ -236,69 +237,69 @@ const DashboardContent = () => {
             </div>
 
             <form onSubmit={handleSearch} className="space-y-3 max-w-md mx-auto">
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              value={group}
-              onChange={handleGroupChange}
-              className="hidden w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-            >
-              <option value="">전체 그룹</option>
-              <option value="vulnerable">취약계층</option>
-              <option value="senior">어르신</option>
-            </select>
-
-            {activeTab !== "ARCHIVE" && (
-              <>
+              <div className="grid grid-cols-2 gap-2">
                 <select
-                  value={sort}
-                  onChange={handleSortChange}
+                  value={group}
+                  onChange={handleGroupChange}
+                  className="hidden w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                >
+                  <option value="">전체 그룹</option>
+                  <option value="vulnerable">취약계층</option>
+                  <option value="senior">어르신</option>
+                </select>
+
+                {activeTab !== "ARCHIVE" && (
+                  <>
+                    <select
+                      value={sort}
+                      onChange={handleSortChange}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="localNo">연번 정렬</option>
+                      <option value="dong">동별 정렬</option>
+                    </select>
+                    <select
+                      value={order}
+                      onChange={handleOrderChange}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
+                    >
+                      <option value="asc">오름차순</option>
+                      <option value="desc">내림차순</option>
+                    </select>
+                  </>
+                )}
+
+                <select
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
                   className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
                 >
-                  <option value="localNo">연번 정렬</option>
-                  <option value="dong">동별 정렬</option>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}개씩 보기
+                    </option>
+                  ))}
                 </select>
-                <select
-                  value={order}
-                  onChange={handleOrderChange}
-                  className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-                >
-                  <option value="asc">오름차순</option>
-                  <option value="desc">내림차순</option>
-                </select>
-              </>
-            )}
+              </div>
 
-            <select
-              value={pageSize}
-              onChange={handlePageSizeChange}
-              className="w-full rounded-xl border border-gray-300 px-3 py-3 text-sm outline-none focus:border-blue-500"
-            >
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <option key={size} value={size}>
-                  {size}개씩 보기
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="성명 / 휴대폰 / 대리인 / 주소 검색"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500"
+                />
+                <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              </div>
 
-          <div className="relative">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="성명 / 휴대폰 / 대리인 / 주소 검색"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500"
-            />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          </div>
-          
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
-          >
-            검색하기
-          </button>
-        </form>
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+              >
+                검색하기
+              </button>
+            </form>
           </div>
         </section>
 
@@ -329,8 +330,8 @@ const DashboardContent = () => {
             >
 
               <div className={`relative block p-4 transition ${item.isCancel
-                  ? 'bg-gray-50 opacity-60 grayscale pointer-events-none select-none'
-                  : 'active:bg-gray-50 bg-white'
+                ? 'bg-gray-50 opacity-60 grayscale pointer-events-none select-none'
+                : 'active:bg-gray-50 bg-white'
                 }`}>
                 <div className="flex items-start justify-between">
 
@@ -469,6 +470,13 @@ const DashboardContent = () => {
       {/* 하단 탭 내비게이션 */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 pb-safe backdrop-blur">
         <div className="mx-auto flex h-16 max-w-md items-center justify-around">
+          <button
+            onClick={() => router.push('/')}
+            className={`flex flex-col items-center gap-1 `}
+          >
+            <Home size={20} />
+            <span className="text-[10px] font-bold">홈</span>
+          </button>
           <button
             onClick={() => handleTabChange("LIST")}
             className={`flex flex-col items-center gap-1 ${activeTab === "LIST" ? "text-blue-600" : "text-gray-400"}`}

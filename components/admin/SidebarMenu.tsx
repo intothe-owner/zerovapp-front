@@ -39,7 +39,8 @@ type Section = {
 
 const singles = [
   { label: "메인", href: "/admin/" },
-  { label: "설무조사 설정", href: "/admin/survey" },
+  { label: "설문조사 설정", href: "/admin/survey" },
+  { label: "경로당", href: "/admin/senior" },
 
 ];
 

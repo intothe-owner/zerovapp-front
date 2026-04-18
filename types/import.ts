@@ -18,3 +18,22 @@ export type CleanUpHouseholdImportResponse = {
   errorCount?: number;
   errors?: string[];
 };
+
+export type SeniorCenterImportRequest = {
+  file: File;
+  programYear: number;
+  overwrite: boolean;
+  listType?: ImportListType;
+};
+
+export type SeniorCenterImportResponse = {
+   ok: boolean;
+  message: string;
+  fileName?: string;
+  programYear?: number;
+  listType?: ImportListType;
+  totalRows?: number;
+  savedRows?: number;
+  errorCount?: number;
+  errors?: string[];
+};

@@ -19,6 +19,7 @@ export interface SeniorCenterItem {
   airPurifierCount: number;
   beforeImage: string | null;
   afterImage: string | null;
+  workName: string | null;
   workDate: string | null;
   remark: string | null;
   isComplete: boolean;

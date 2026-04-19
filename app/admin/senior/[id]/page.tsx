@@ -103,7 +103,7 @@ const SeniorCenterDetailPage = () => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            const fileName = `${center.name}_${category === "AIR_CONDITIONER" ? "에어컨" : "공기청정기"}_보고서.pdf`;
+            const fileName = `${organization}_${center.name}_${category === "AIR_CONDITIONER" ? "에어컨" : "공기청정기"}_보고서.pdf`;
             link.setAttribute('download', fileName);
             document.body.appendChild(link);
             link.click();

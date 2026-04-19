@@ -81,7 +81,7 @@ export default function SeniorCenterListTable() {
   const handleDownloadPdf = async (id: number, name: string, category: "AIR_CONDITIONER" | "AIR_PURIFIER", organization?: string) => {
     const categoryName = category === "AIR_CONDITIONER" ? "에어컨" : "공기청정기";
     const loadingKey = `${id}-${category}`;
-    alert(organization);
+
 
     setDownloadingId(loadingKey);
     try {
@@ -96,7 +96,7 @@ export default function SeniorCenterListTable() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${name}_${categoryName}_작업보고서.pdf`);
+      link.setAttribute('download', `${organization}_${name}_${categoryName}_작업보고서.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();

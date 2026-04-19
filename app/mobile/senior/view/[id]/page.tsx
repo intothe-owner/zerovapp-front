@@ -150,9 +150,18 @@ const SeniorCenterMobileDetailPage = () => {
     AIR_CONDITIONER: false,
     AIR_PURIFIER: false,
   });
-  // ✅ 새롭게 추가할 상태 (모달 제어 및 선택된 기관)
+  
+  // ✅ 새롭게 추가할 상태 (모달 제어, 선택된 기관 및 작업자 이름)
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState("노인장애인복지과");
+  const [selectedOrg, setSelectedOrg] = useState("노인장애인 복지과");
+  const [workName, setWorkName] = useState(""); // 작업자 이름 상태 추가
+  // ✅ [추가할 부분] 서버에서 데이터를 성공적으로 불러오면 DB에 저장된 작업자 이름을 입력칸에 채워줍니다.
+  useEffect(() => {
+    if (item?.workName) {
+      setWorkName(item.workName);
+    }
+  }, [item?.workName]);
+
   // 메모리 누수 방지 (미리보기 URL 해제)
   useEffect(() => {
     return () => {
@@ -265,21 +274,26 @@ const SeniorCenterMobileDetailPage = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  // ✅ PDF 다운로드 핸들러 (organization 파라미터 추가)
-  const handleGeneratePdf = async (category: ReportCategory, organization?: string) => {
+  // ✅ PDF 다운로드 핸들러 (organization 및 workName 파라미터 추가)
+  const handleGeneratePdf = async (category: ReportCategory, organization?: string, workerName?: string) => {
     if (!item?.id) return;
     try {
       setPdfLoading(prev => ({ ...prev, [category]: true }));
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
       
-      // ✅ 기관 정보가 있으면 쿼리스트링 추가
-      const apiUrl = `${baseUrl}/api/senior-centers/${id}/reports/${category}/pdf${organization ? `?org=${encodeURIComponent(organization)}` : ''}`;
+      // ✅ 기관 정보 및 작업자 이름이 있으면 쿼리스트링 조합
+      const queryParams = new URLSearchParams();
+      if (organization) queryParams.append("org", organization);
+      if (workerName) queryParams.append("workName", workerName);
+      
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+      const apiUrl = `${baseUrl}/api/senior-centers/${id}/reports/${category}/pdf${queryString}`;
       
       const response = await axios.get(apiUrl, {
         responseType: 'blob',
       });
 
-      const fileName = `${item.name}_${category === "AIR_CONDITIONER" ? "에어컨" : "공기청정기"}_보고서.pdf`;
+      const fileName = `${organization || "기관"}_${item.name}_${category === "AIR_CONDITIONER" ? "에어컨" : "공기청정기"}_보고서.pdf`;
       await downloadBlobFile(response.data, fileName);
       
       setIsModalOpen(false); // ✅ 다운로드 완료 시 모달 닫기
@@ -343,6 +357,18 @@ const SeniorCenterMobileDetailPage = () => {
           <DetailRow label="담당자 성명" value={item?.managerName || "-"} />
           <PhoneDetailRow label="담당자 연락처" value={item?.managerPhone} color="green" />
           <DetailRow label="특이사항 (비고)" value={item?.remark || "없음"} />
+          {/* ✅ 작업자 이름 입력 필드 (특이사항 밑으로 이동) */}
+          <div className="rounded-xl bg-gray-50 px-4 py-3 border border-gray-100">
+            <label htmlFor="worker-name" className="text-xs font-bold text-gray-600">작업자 이름 (보고서 출력용)</label>
+            <input
+              id="worker-name"
+              type="text"
+              value={workName}
+              onChange={(e) => setWorkName(e.target.value)}
+              placeholder="예: 홍길동"
+              className="mt-1.5 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
         </section>
 
         {/* 3. 현장 사진 업로드 탭 & 그리드 */}
@@ -420,7 +446,7 @@ const SeniorCenterMobileDetailPage = () => {
               </button>
               
               <button
-                onClick={() => handleGeneratePdf("AIR_PURIFIER",'노인장애인복지과')}
+                onClick={() => handleGeneratePdf("AIR_PURIFIER", "노인장애인 복지과", workName)} // ✅ 작업자 이름 같이 전송
                 disabled={pdfLoading["AIR_PURIFIER"]}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-blue-600 bg-white py-3 text-sm font-bold text-blue-600 transition active:scale-95 shadow-sm disabled:border-gray-300 disabled:text-gray-400"
               >
@@ -432,25 +458,30 @@ const SeniorCenterMobileDetailPage = () => {
         </div>
       )}
 
-      {/* ✅ 에어컨 보고서 기관 선택 모달창 */}
+      {/* ✅ 에어컨 보고서 기관 선택 및 작업자 모달창 */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white shadow-xl overflow-hidden">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">보고서 기관 선택</h3>
+              <h3 className="text-lg font-bold text-gray-900">보고서 옵션 선택</h3>
               <p className="text-xs text-gray-500 mt-1">{item?.name} - 에어컨 보고서</p>
             </div>
             
-            <div className="p-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">제출할 기관을 선택해주세요</label>
-              <select
-                value={selectedOrg}
-                onChange={(e) => setSelectedOrg(e.target.value)}
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white appearance-none"
-              >
-                <option value="노인장애인 복지과">노인장애인 복지과</option>
-                <option value="해운대구청">해운대구청</option>
-              </select>
+            <div className="p-6 space-y-4">
+              {/* 기관 선택 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">제출할 기관을 선택해주세요</label>
+                <select
+                  value={selectedOrg}
+                  onChange={(e) => setSelectedOrg(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm font-bold text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white appearance-none"
+                >
+                  <option value="노인장애인 복지과">노인장애인 복지과</option>
+                  <option value="해운대구청">해운대구청</option>
+                </select>
+              </div>
+
+              
             </div>
 
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2">
@@ -463,7 +494,8 @@ const SeniorCenterMobileDetailPage = () => {
               </button>
               <button
                 type="button"
-                onClick={() => handleGeneratePdf("AIR_CONDITIONER", selectedOrg)}
+                // ✅ 다운로드 버튼 클릭 시 selectedOrg와 workName을 함께 넘김
+                onClick={() => handleGeneratePdf("AIR_CONDITIONER", selectedOrg, workName)}
                 disabled={pdfLoading["AIR_CONDITIONER"]}
                 className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-all disabled:bg-gray-400 active:scale-95"
               >

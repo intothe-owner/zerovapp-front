@@ -428,19 +428,90 @@ function CountBox({ label, count, color = "indigo" }: { label: string; count: nu
 }
 
 function PhotoBox({ label, url, onUpload, isNew }: { label: string; url?: string | null; onUpload: (e: ChangeEvent<HTMLInputElement>) => void; isNew?: boolean }) {
+    
+    // ✅ 이미지 다운로드 핸들러 (탐색기 창 띄우기 지원)
+    const handleDownload = async (e: React.MouseEvent, imageUrl: string, filename: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+            // 1. 파일 데이터(Blob) 가져오기
+            let fetchUrl = imageUrl;
+            // 외부 URL인 경우 CORS 캐시 방지용 파라미터 추가
+            if (!imageUrl.startsWith("blob:")) {
+                fetchUrl = `${imageUrl}?t=${new Date().getTime()}`;
+            }
+            
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error("네트워크 응답이 좋지 않습니다.");
+            const blob = await response.blob();
+
+            // 2. 모던 브라우저용 '다른 이름으로 저장' 탐색기 띄우기 (Chrome, Edge 지원)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await (window as any).showSaveFilePicker({
+                        suggestedName: `${filename}.jpg`,
+                        types: [{
+                            description: 'JPEG 이미지',
+                            accept: { 'image/jpeg': ['.jpg', '.jpeg'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return; // 성공적으로 저장 완료 시 종료
+                } catch (pickerError: any) {
+                    // 사용자가 탐색기 창에서 '취소'를 누른 경우 에러가 발생하므로 무시
+                    if (pickerError.name === 'AbortError') return;
+                    throw pickerError; // 다른 에러는 아래 catch문으로 넘김
+                }
+            }
+
+            // 3. 구형 브라우저 및 Safari용 폴백 (기본 폴더로 바로 다운로드)
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `${filename}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+            
+        } catch (error) {
+            console.error("이미지 다운로드 실패:", error);
+            alert("직접 다운로드가 제한된 환경입니다. 새 창이 열리면 이미지를 길게 눌러 저장해주세요.");
+            window.open(imageUrl, "_blank");
+        }
+    };
+
     return (
         <div className="space-y-3">
             <div className="flex justify-between items-center px-1">
                 <p className="text-xs font-bold text-gray-500">{label}</p>
                 {isNew && <span className="text-[10px] font-black text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">저장 대기</span>}
             </div>
+            
+            {/* 사진 영역 */}
             <div className={`relative aspect-video rounded-2xl border-2 border-dashed overflow-hidden group transition-all ${isNew ? 'border-amber-400 ring-2 ring-amber-100' : 'border-gray-200 bg-gray-50 hover:border-indigo-300'}`}>
                 {url ? <img src={url} alt={label} className="h-full w-full object-cover" /> : <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-1"><Camera size={28} /><span className="text-[10px] font-bold text-gray-400">사진 선택</span></div>}
+                
                 <label className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white font-bold text-xs backdrop-blur-sm">
                     <input type="file" className="hidden" onChange={onUpload} accept="image/*" />
                     <div className="flex flex-col items-center gap-2"><Upload size={20} />{url ? "사진 변경" : "사진 선택"}</div>
                 </label>
             </div>
+
+            {/* 다운로드 버튼 */}
+            {url && (
+                <button
+                    type="button"
+                    onClick={(e) => handleDownload(e, url, label)}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-all shadow-sm active:scale-95"
+                >
+                    <Download size={16} />
+                    사진 다운로드
+                </button>
+            )}
         </div>
     );
 }

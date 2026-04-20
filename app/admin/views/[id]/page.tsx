@@ -7,6 +7,7 @@ import {
     useUploadCleanUpHouseholdPhotos,
 } from "@/hooks/useCleanUpHousehold";
 import { useActiveSurvey, useSurveyResponseByHousehold } from "@/hooks/useSurvey";
+import { Download } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -662,40 +663,55 @@ const AdminDetailPage = () => {
         }
     };
 
-    const handleDownloadSavedPdf = async () => {
-        if (!savedWorkReportId) {
-            alert("저장된 PDF가 없습니다.");
-            return;
-        }
+    const handleDownload = async (e: React.MouseEvent, imageUrl: string, filename: string) => {
+        e.preventDefault();
+        e.stopPropagation();
 
         try {
-            setPdfLoading(true);
+            let fetchUrl = imageUrl;
+            // 외부 URL인 경우 CORS 캐시 방지용 파라미터 추가
+            if (!imageUrl.startsWith("blob:")) {
+                fetchUrl = `${imageUrl}?t=${new Date().getTime()}`;
+            }
+            
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error("네트워크 응답이 좋지 않습니다.");
+            const blob = await response.blob();
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL}/work-reports/${savedWorkReportId}/download`,
-                {
-                    method: "GET",
-                    credentials: "include",
+            // 모던 브라우저용 '다른 이름으로 저장' 탐색기 띄우기 (Chrome, Edge 지원)
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const handle = await (window as any).showSaveFilePicker({
+                        suggestedName: `${filename}.jpg`,
+                        types: [{
+                            description: 'JPEG 이미지',
+                            accept: { 'image/jpeg': ['.jpg', '.jpeg'] },
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return; // 성공 시 종료
+                } catch (pickerError: any) {
+                    if (pickerError.name === 'AbortError') return; // 취소 누른 경우 무시
+                    throw pickerError;
                 }
-            );
-
-            if (!res.ok) {
-                const json = await res.json().catch(() => null);
-                throw new Error(json?.message || "PDF 다운로드에 실패했습니다.");
             }
 
-            const blob = await res.blob();
-            const fileName = parseFileNameFromDisposition(
-                res.headers.get("Content-Disposition"),
-                item?.dong,
-                item?.name
-            );
-
-            downloadBlobFile(blob, fileName);
-        } catch (err) {
-            alert(err instanceof Error ? err.message : "PDF 다운로드에 실패했습니다.");
-        } finally {
-            setPdfLoading(false);
+            // 구형 브라우저 및 Safari용 폴백 (기본 폴더로 바로 다운로드)
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = `${filename}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(blobUrl);
+            
+        } catch (error) {
+            console.error("이미지 다운로드 실패:", error);
+            alert("직접 다운로드가 제한된 환경입니다. 새 창이 열리면 이미지를 길게 눌러 저장해주세요.");
+            window.open(imageUrl, "_blank");
         }
     };
 
@@ -984,6 +1000,16 @@ const AdminDetailPage = () => {
                                                     JPG, PNG 등 이미지 파일 1장만 선택하세요.
                                                 </p>
                                             </div>
+                                            {imageSrc && (
+        <button
+            type="button"
+            onClick={(e) => handleDownload(e, imageSrc, `${item.name}_${label}`)}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all shadow-sm active:scale-95"
+        >
+            <Download size={16} />
+            {label} 사진 다운로드
+        </button>
+    )}
                                         </div>
                                     );
                                 })}

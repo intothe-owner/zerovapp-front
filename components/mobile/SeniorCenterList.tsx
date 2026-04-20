@@ -39,7 +39,11 @@ const SeniorCenterList = () => {
   const sortOrder = (searchParams.get("sortOrder") as SortOrder) || "ASC";
   
   const [searchInput, setSearchInput] = useState(keyword);
-
+  // 5. 페이지 변경 시 처리
+  const setPage = (newPage: number | ((prev: number) => number)) => {
+    const nextP = typeof newPage === "function" ? newPage(page) : newPage;
+    updateUrlParams({ page: nextP });
+  };
   const filterParams = {
     isComplete: activeTab === "COMPLETE" ? true : false,
     isArchive: activeTab === "ARCHIVE" ? true : (activeTab === "LIST" ? false : undefined)
@@ -337,6 +341,43 @@ const SeniorCenterList = () => {
             })
           )}
         </div>
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm mb-20">
+          <div className="space-y-3">
+            <div className="text-center text-sm text-gray-500">
+              총 <span className="font-semibold text-gray-900">{pagination?.total ?? 0}</span>건
+              {" / "}
+              {pagination?.page ?? 1} 페이지
+              {pagination?.totalPages ? ` / 전체 ${pagination.totalPages} 페이지` : ""}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={!pagination || pagination.page <= 1}
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              >
+                이전
+              </button>
+
+              <div className="min-w-[72px] text-center text-sm font-medium text-gray-900">
+                {pagination?.page ?? 1} / {pagination?.totalPages ?? 1}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!pagination) return;
+                  setPage((prev) => Math.min(pagination.totalPages, prev + 1));
+                }}
+                disabled={!pagination || pagination.page >= pagination.totalPages}
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* 하단 탭 내비게이션 */}
